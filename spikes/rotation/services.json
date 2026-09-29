@@ -1,0 +1,13 @@
+{
+  "_note": "Placeholder US prices (ad-free tiers) — verify before trusting savings numbers. 'current' marks what the user pays for today; it is the no-rotation baseline.",
+  "services": [
+    {"name": "Netflix",     "price": 24.99, "current": true,  "aliases": ["Netflix Standard with Ads", "Netflix basic with Ads"]},
+    {"name": "HBO Max",     "price": 16.99, "current": true,  "aliases": ["Max", "HBO Max Amazon Channel", "HBO Max Basic with Ads"]},
+    {"name": "Disney+",     "price": 15.99, "current": true,  "aliases": ["Disney Plus", "Disney Plus with Ads"]},
+    {"name": "Hulu",        "price": 18.99, "current": false, "aliases": []},
+    {"name": "Peacock",     "price": 10.99, "current": true,  "aliases": ["Peacock Premium", "Peacock Premium Plus"]},
+    {"name": "Apple TV+",   "price": 12.99, "current": true,  "aliases": ["Apple TV", "Apple TV Plus", "Apple TV Amazon Channel"]},
+    {"name": "Paramount+",  "price": 12.99, "current": false, "aliases": ["Paramount Plus", "Paramount+ with Showtime"]},
+    {"name": "Prime Video", "price": 8.99,  "current": false, "aliases": ["Amazon Prime Video", "Amazon Prime Video with Ads"]}
+  ]
+}
