@@ -23,6 +23,10 @@ restart them, and how much the user has saved.
 Concept and planning only. No code, stack or platform has been chosen yet.
 When one is, add build, test and lint commands and a definition of done here.
 
+`spikes/` holds throwaway feasibility scripts (Python, standard library only).
+They read `TMDB_API_KEY` (TMDB's API Read Access Token) from `.env` at the repo
+root. `.env` is gitignored; never commit it or print its value.
+
 ## Hard rules
 
 - **No AI attribution anywhere.** Commit messages, trailers, PR titles and
@@ -42,5 +46,8 @@ When one is, add build, test and lint commands and a definition of done here.
 
 ## Git
 
-- Solo repo for now; committing and pushing straight to `main` is fine.
+- Solo repo, docs and spikes only: committing and pushing straight to `main`
+  is fine.
+- Once app code exists, switch to a branch per change and a PR into `main`,
+  and update this section.
 - Short, imperative commit subjects describing what changed.

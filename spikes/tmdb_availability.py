@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+"""Spike: look up where each watchlist title streams, using TMDB watch providers.
+
+Usage:
+    python3 spikes/tmdb_availability.py [watchlist.txt] [--region US]
+
+Reads TMDB_API_KEY from .env at the repo root (Read Access Token or v3 key).
+Watch-provider data is supplied to TMDB by JustWatch.
+"""
+
+import argparse
+import json
+import sys
+import urllib.parse
+import urllib.request
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+API = "https://api.themoviedb.org/3"
+
+
+def load_key():
+    env = ROOT / ".env"
+    if env.exists():
+        for line in env.read_text().splitlines():
+            if line.startswith("TMDB_API_KEY="):
+                key = line.split("=", 1)[1].strip()
+                if key:
+                    return key
+    sys.exit("TMDB_API_KEY is not set in .env")
+
+
+def get(key, path, **params):
+    headers = {"Accept": "application/json"}
+    if key.startswith("eyJ"):  # v4 Read Access Token
+        headers["Authorization"] = f"Bearer {key}"
+    else:  # v3 API key
+        params["api_key"] = key
+    url = f"{API}{path}?{urllib.parse.urlencode(params)}"
+    with urllib.request.urlopen(urllib.request.Request(url, headers=headers)) as resp:
+        return json.load(resp)
+
+
+def find_title(key, query):
+    """Best match among movies and TV shows, or None."""
+    results = get(key, "/search/multi", query=query)["results"]
+    results = [r for r in results if r.get("media_type") in ("movie", "tv")]
+    return results[0] if results else None
+
+
+def providers(key, media_type, tmdb_id, region):
+    data = get(key, f"/{media_type}/{tmdb_id}/watch/providers")["results"].get(region, {})
+    names = lambda kind: [p["provider_name"] for p in data.get(kind, [])]
+    return {
+        "subscription": names("flatrate"),
+        "free/ads": names("free") + names("ads"),
+        "rent/buy": sorted(set(names("rent") + names("buy"))),
+    }
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("watchlist", nargs="?", default=ROOT / "spikes" / "watchlist.txt")
+    parser.add_argument("--region", default="US")
+    args = parser.parse_args()
+
+    key = load_key()
+    titles = [
+        t.strip()
+        for t in Path(args.watchlist).read_text().splitlines()
+        if t.strip() and not t.startswith("#")
+    ]
+
+    for query in titles:
+        match = find_title(key, query)
+        if not match:
+            print(f"\n{query}\n  (no movie/TV match on TMDB)")
+            continue
+        name = match.get("title") or match.get("name")
+        year = (match.get("release_date") or match.get("first_air_date") or "")[:4]
+        print(f"\n{query}  →  {name} ({year}, {match['media_type']})")
+        found = providers(key, match["media_type"], match["id"], args.region)
+        if not any(found.values()):
+            print(f"  (no providers listed for {args.region})")
+        for kind, names in found.items():
+            if names:
+                print(f"  {kind:<13} {', '.join(names)}")
+
+    print("\nStreaming availability data from JustWatch via TMDB.")
+
+
+if __name__ == "__main__":
+    main()

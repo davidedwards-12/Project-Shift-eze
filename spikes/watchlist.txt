@@ -1,0 +1,6 @@
+# One title per line. Lines starting with # are ignored.
+Stranger Things
+The Last of Us
+Severance
+Andor
+Premier League
