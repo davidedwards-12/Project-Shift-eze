@@ -1,0 +1,233 @@
+// Ported from spikes/rotation/test_rotate.py. These pin down the planning
+// rules; keep both in step until the Python spike is retired.
+
+import Testing
+@testable import RotationEngine
+
+let start = CalendarDate(2026, 10, 1)  // plan begins October 2026
+let today = CalendarDate(2026, 9, 29)
+
+/// Oct–Dec are 2026; Jan onwards 2027.
+func d(_ month: Int, _ day: Int) -> CalendarDate {
+    CalendarDate(month >= 9 ? 2026 : 2027, month, day)
+}
+
+func actions(_ services: [Service], _ months: [Month]) -> [String] {
+    Actions.plan(catalog: Catalog(services), months: months, start: start, today: today)
+        .map { "\($0.date) \($0.title)" }
+}
+
+func line(_ date: CalendarDate, _ title: String) -> String { "\(date) \(title)" }
+
+@Suite struct RenewalActions {
+    @Test func lateMonthRenewalIsKeptForNextMonth() {
+        // HBO Max renews on the 28th and is needed in November: the Oct 28
+        // renewal covers November, so keep it rather than cancel + restart.
+        let hbo = Service(name: "HBO Max", price: 1699, current: true, renews: 28)
+        #expect(actions([hbo], [Month(), Month(["HBO Max": 1699])])
+            == [line(d(10, 28), "Keep HBO Max"), line(d(11, 28), "Cancel HBO Max")])
+    }
+
+    @Test func lateMonthRenewalAlreadyCoversFirstMonth() {
+        // Netflix renewed Sep 22, which pays for October: cancel before Oct 22.
+        let netflix = Service(name: "Netflix", price: 2499, current: true, renews: 22)
+        #expect(actions([netflix], [Month(["Netflix": 2499])]) == [line(d(10, 22), "Cancel Netflix")])
+    }
+
+    @Test func cancelRestartCancel() {
+        let disney = Service(name: "Disney+", price: 1599, current: true, renews: 1)
+        #expect(actions([disney], [Month(), Month(["Disney+": 1599]), Month()])
+            == [line(d(10, 1), "Cancel Disney+"), line(d(11, 1), "Restart Disney+"), line(d(12, 1), "Cancel Disney+")])
+    }
+
+    @Test func newServiceStartsOnTheFirst() {
+        let prime = Service(name: "Prime Video", price: 899)
+        #expect(actions([prime], [Month(), Month(), Month(["Prime Video": 899])])
+            == [line(d(12, 1), "Start Prime Video"), line(d(1, 1), "Cancel Prime Video")])
+    }
+
+    @Test func unneededCurrentServiceIsCancelledOnce() {
+        let peacock = Service(name: "Peacock", price: 1299, current: true, renews: 15)
+        #expect(actions([peacock], [Month(), Month()]) == [line(d(10, 15), "Cancel Peacock")])
+    }
+
+    @Test func unneededNonCurrentServiceHasNoActions() {
+        #expect(actions([Service(name: "Hulu", price: 1899)], [Month()]).isEmpty)
+    }
+}
+
+@Suite struct PlanningRules {
+    static let services = [
+        Service(name: "Netflix", price: 2499, current: true, aliases: ["Netflix Standard with Ads"]),
+        Service(name: "Disney+", price: 1599, current: true, aliases: ["Disney Plus"]),
+        Service(name: "Hulu", price: 1899),
+        Service(name: "Prime Video", price: 899, aliases: ["Amazon Prime Video"]),
+    ]
+    static let watchlist = [
+        WatchlistEntry(title: "Andor", services: ["Disney Plus"]),
+        WatchlistEntry(title: "The Bear", services: ["Hulu", "Disney Plus"]),
+        WatchlistEntry(title: "Stranger Things", services: ["Netflix Standard with Ads", "Spectrum On Demand"], months: 2),
+        WatchlistEntry(title: "Reacher", services: ["Amazon Prime Video"]),
+    ]
+
+    func plan(_ budget: Cents) -> (Catalog, Planning.Cover, [Month]) {
+        let (catalog, titles) = Planning.prepare(services: Self.services, watchlist: Self.watchlist)
+        let cover = Planning.cheapestCover(titles, catalog: catalog, budget: budget)!
+        return (catalog, cover, Planning.schedule(cover, catalog: catalog, budget: budget))
+    }
+
+    @Test func providerNamesAreNormalizedAndUnknownOnesDropped() {
+        let (_, titles) = Planning.prepare(services: Self.services, watchlist: Self.watchlist)
+        #expect(titles[2].services == ["Netflix"])  // alias mapped, Spectrum dropped
+    }
+
+    @Test func freeTitlesAreKeptOutOfThePlan() {
+        let (catalog, titles) = Planning.prepare(services: Self.services, watchlist: Self.watchlist + [
+            WatchlistEntry(title: "Before Sunrise", services: [], free: ["Tubi TV", "The Roku Channel"]),
+            WatchlistEntry(title: "Tropic Thunder", services: ["Hulu"], free: ["YouTube Free"]),
+        ])
+        let (free, paid) = Planning.splitFree(titles)
+        #expect(free.map(\.name) == ["Before Sunrise", "Tropic Thunder"])
+        let cover = Planning.cheapestCover(paid, catalog: catalog, budget: 4000)!
+        #expect(cover.need["Hulu"] == nil)  // Tropic Thunder is free, so it doesn't pull Hulu in
+    }
+
+    @Test func untrustedAndLibraryFreeListingsStillGetAPaidPlan() {
+        let (_, titles) = Planning.prepare(services: Self.services, watchlist: [
+            WatchlistEntry(title: "Reacher", services: ["Amazon Prime Video"], free: ["Amazon Prime Video Free with Ads"]),
+            WatchlistEntry(title: "Event Horizon", services: ["Hulu"], free: ["Kanopy"]),
+        ])
+        let (free, paid) = Planning.splitFree(titles)
+        #expect(free.isEmpty)
+        #expect(paid[1].library == ["Kanopy"])
+    }
+
+    @Test func reusesANeededServiceInsteadOfAddingAnother() {
+        // The Bear is on Hulu and Disney+; Andor already needs Disney+.
+        let (_, cover, _) = plan(4000)
+        #expect(cover.assignment["The Bear"] == "Disney+")
+        #expect(cover.need["Hulu"] == nil)
+    }
+
+    @Test(arguments: [2500, 4000, 6000])
+    func monthsNeverExceedBudget(budget: Cents) {
+        let (_, _, months) = plan(budget)
+        #expect(months.allSatisfy { $0.total <= budget })
+    }
+
+    @Test func multiMonthTitleGetsConsecutiveMonths() {
+        let (_, _, months) = plan(2500)
+        let active = months.indices.filter { months[$0].contains("Netflix") }
+        #expect(active.count == 2)
+        #expect(active[1] - active[0] == 1)
+    }
+
+    @Test func noPlanWhenBudgetIsBelowARequiredService() {
+        let (catalog, titles) = Planning.prepare(services: Self.services, watchlist: Self.watchlist)
+        #expect(Planning.cheapestCover(titles, catalog: catalog, budget: 1000) == nil)
+    }
+
+    @Test func savingsBaselineDoesNotDependOnBudget() {
+        let results = [2500, 6000].map { budget in
+            let (catalog, cover, months) = plan(budget)
+            return Savings(catalog: catalog, cover: cover, months: months)
+        }
+        #expect(results[0].baseline == results[1].baseline)  // same baseline
+        #expect(results[0].planned == results[1].planned)    // same total, just spread differently
+        #expect(results[0].added == ["Prime Video"])         // reported, but...
+        #expect(results[0].baseline == 2499 + 1599)          // ...baseline is current services only
+    }
+
+    @Test func primeMembersGetPrimeTitlesIncluded() {
+        var services = Self.services
+        services[3].includedWith = "amazon_prime"
+        let (_, titles) = Planning.prepare(services: services, watchlist: Self.watchlist, memberships: ["amazon_prime": true])
+        let (included, rest) = Planning.splitIncluded(titles)
+        #expect(included.map(\.name) == ["Reacher"])
+        #expect(!rest.map(\.name).contains("Reacher"))
+    }
+
+    @Test func nonMembersStillPayForPrimeVideo() {
+        var services = Self.services
+        services[3].includedWith = "amazon_prime"
+        let (_, titles) = Planning.prepare(services: services, watchlist: Self.watchlist, memberships: ["amazon_prime": false])
+        #expect(Planning.splitIncluded(titles).included.isEmpty)
+    }
+}
+
+@Suite struct FreeTitlePlacement {
+    static let catalog = Catalog([
+        Service(name: "Netflix", price: 2499),
+        Service(name: "Hulu", price: 1899),
+        Service(name: "Peacock", price: 1299, current: true),
+    ])
+
+    func free(_ name: String, _ on: String...) -> Title {
+        Title(name: name, services: on, free: ["Tubi TV"], library: [], included: [], months: 1)
+    }
+
+    @Test func freeTitleOnAPlannedServiceGoesInThatMonth() {
+        let months = [Month(["Netflix": 2499]), Month(["Hulu": 1899])]
+        let placed = Planning.placeFree([free("Tropic Thunder", "Hulu")], months: months, catalog: Self.catalog)
+        #expect(placed.inPlan == ["Tropic Thunder": .init(month: 1, service: "Hulu")])
+    }
+
+    @Test func earliestPlannedMonthWins() {
+        let months = [Month(["Netflix": 2499]), Month(["Hulu": 1899])]
+        let placed = Planning.placeFree([free("X", "Hulu", "Netflix")], months: months, catalog: Self.catalog)
+        #expect(placed.inPlan == ["X": .init(month: 0, service: "Netflix")])
+    }
+
+    @Test func freeTitleOnACurrentServiceThePlanDrops() {
+        let placed = Planning.placeFree([free("Poker Face", "Peacock")], months: [Month(["Netflix": 2499])], catalog: Self.catalog)
+        #expect(placed.onCurrent == ["Poker Face": "Peacock"])
+    }
+
+    @Test func freeOnlyWhenNoPaidOptionYouWillHave() {
+        let placed = Planning.placeFree([free("Before Sunrise"), free("Y", "Hulu")], months: [Month(["Netflix": 2499])], catalog: Self.catalog)
+        #expect(placed.freeOnly == ["Before Sunrise", "Y"])
+    }
+}
+
+@Suite struct ManagementLinkLookup {
+    let links = ManagementLinks.bundled
+
+    func link(_ service: String, _ biller: String) -> String? {
+        links.link(service: service, billedThrough: biller)
+    }
+
+    @Test func directBillingUsesTheServicePage() {
+        #expect(link("Peacock", "Peacock") == "https://www.peacocktv.com/account/plans")
+    }
+
+    @Test func thirdPartyBillingUsesTheBillersPage() {
+        #expect(link("Netflix", "Apple") == links.billers["Apple"]!.web)
+    }
+
+    @Test func billerAliases() {
+        #expect(link("Peacock", "Comcast") == links.billers["Xfinity"]!.web)
+        #expect(link("HBO Max", "Amazon Channels") == links.billers["Amazon"]!.web)
+    }
+
+    @Test func rokuExceptionSendsDisneyAndHuluToTheService() {
+        #expect(link("Disney+", "Roku") == links.services["Disney+"]!.manage)
+        #expect(link("Hulu", "Roku") == links.services["Hulu"]!.manage)
+        #expect(link("Peacock", "Roku") == links.billers["Roku"]!.web)
+    }
+
+    @Test func unknownBillerFallsBackToTheServicePage() {
+        #expect(link("Netflix", "Some Cable Co") == links.services["Netflix"]!.manage)
+    }
+}
+
+@Suite struct Dates {
+    @Test func dayIsClampedToMonthLength() {
+        #expect(CalendarDate(2027, 1, 1).onDay(31, monthsLater: 1) == CalendarDate(2027, 2, 28))
+        #expect(CalendarDate(2028, 1, 1).onDay(31, monthsLater: 1) == CalendarDate(2028, 2, 29))
+    }
+
+    @Test func monthsRollOverYears() {
+        #expect(start.onDay(1, monthsLater: 3) == CalendarDate(2027, 1, 1))
+        #expect(start.onDay(22, monthsLater: -1) == CalendarDate(2026, 9, 22))
+    }
+}

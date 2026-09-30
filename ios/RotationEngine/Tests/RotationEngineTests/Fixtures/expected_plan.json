@@ -1,0 +1,88 @@
+{
+  "budget_cents": 4000,
+  "months": [
+    [
+      [
+        "Netflix",
+        2499
+      ],
+      [
+        "Apple TV+",
+        1299
+      ]
+    ],
+    [
+      [
+        "HBO Max",
+        1699
+      ],
+      [
+        "Disney+",
+        1599
+      ]
+    ],
+    [
+      [
+        "Paramount+",
+        1299
+      ],
+      [
+        "Hulu",
+        1899
+      ]
+    ]
+  ],
+  "assignment": {
+    "Stranger Things": "Netflix",
+    "The Last of Us": "HBO Max",
+    "Severance": "Apple TV+",
+    "Andor": "Disney+",
+    "Lanterns": "HBO Max",
+    "War of the Worlds": "Apple TV+",
+    "Event Horizon": "Paramount+",
+    "The Super Hero Squad Show": "Disney+",
+    "Katak: The Brave Beluga": "Hulu",
+    "Good Luck, Have Fun, Don't Die": "Hulu",
+    "Gentleman Jack": "HBO Max",
+    "White House Plumbers": "HBO Max"
+  },
+  "actions": [
+    "2026-10-01 Cancel Disney+",
+    "2026-10-05 Keep Apple TV+",
+    "2026-10-15 Cancel Peacock",
+    "2026-10-22 Cancel Netflix",
+    "2026-10-28 Keep HBO Max",
+    "2026-11-01 Restart Disney+",
+    "2026-11-05 Cancel Apple TV+",
+    "2026-11-28 Cancel HBO Max",
+    "2026-12-01 Cancel Disney+",
+    "2026-12-01 Start Hulu",
+    "2026-12-01 Start Paramount+",
+    "2027-01-01 Cancel Hulu",
+    "2027-01-01 Cancel Paramount+"
+  ],
+  "included": [
+    "The Summer I Turned Pretty",
+    "Reacher"
+  ],
+  "free_in_plan": {
+    "Fighting Spirit": [
+      0,
+      "Netflix"
+    ],
+    "Tropic Thunder": [
+      2,
+      "Hulu"
+    ]
+  },
+  "free_only": [
+    "Oddbods (Shorts)",
+    "Before Sunrise",
+    "Boy Friends"
+  ],
+  "baseline_cents": 9095,
+  "added": [
+    "Paramount+",
+    "Hulu"
+  ]
+}
