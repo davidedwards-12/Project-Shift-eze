@@ -38,14 +38,21 @@ LINKS = json.loads((HERE / "management_links.json").read_text())
 
 
 def load(services_path, watchlist_path):
-    services = json.loads(Path(services_path).read_text())["services"]
+    return prepare(
+        json.loads(Path(services_path).read_text())["services"],
+        json.loads(Path(watchlist_path).read_text())["titles"],
+    )
+
+
+def prepare(services, raw_titles):
+    """Index services by name and normalize each title's provider names."""
     lookup = {}
     for s in services:
         for n in [s["name"], *s["aliases"]]:
             lookup[n.lower()] = s["name"]
 
     titles = []
-    for t in json.loads(Path(watchlist_path).read_text())["titles"]:
+    for t in raw_titles:
         # Normalize provider names; drop providers we don't track (e.g. cable VOD).
         on = sorted({lookup[p.lower()] for p in t["services"] if p.lower() in lookup})
         titles.append({"title": t["title"], "services": on, "months": t.get("months", 1)})
@@ -172,6 +179,19 @@ def actions(services, months, start, today):
     return sorted(events, key=lambda e: e[:3])
 
 
+def savings(services, need, months):
+    """(baseline $/mo, rotation $/mo, services added to the baseline).
+
+    Baseline = every current service plus whatever the watchlist needs that
+    isn't current, kept every month.
+    """
+    current = [n for n, s in services.items() if s["current"]]
+    added = [n for n in need if not services[n]["current"]]
+    baseline = sum(services[n]["price"] for n in current + added)
+    average = sum(sum(m.values()) for m in months) / len(months)
+    return baseline, average, added
+
+
 def main():
     today = datetime.date.today()
     p = argparse.ArgumentParser()
@@ -212,11 +232,9 @@ def main():
         if link:
             print(f"          → {link}")
 
+    baseline, average, added = savings(services, need, months)
+    planned = average * len(months)
     current = [n for n, s in services.items() if s["current"]]
-    added = [n for n in need if not services[n]["current"]]
-    baseline = sum(services[n]["price"] for n in current + added)
-    planned = sum(sum(m.values()) for m in months)
-    average = planned / len(months)
     kept = ", ".join(current) + (f", + {', '.join(added)}" if added else "")
     print(f"\nWithout rotation ({kept}):  ${baseline:.2f}/mo")
     print(f"With rotation: ${planned:.2f} over {len(months)} months =  ${average:.2f}/mo")

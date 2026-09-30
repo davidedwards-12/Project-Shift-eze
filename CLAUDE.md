@@ -27,6 +27,15 @@ When one is, add build, test and lint commands and a definition of done here.
 They read `TMDB_API_KEY` (TMDB's API Read Access Token) from `.env` at the repo
 root. `.env` is gitignored; never commit it or print its value.
 
+```bash
+python3 -m unittest discover spikes/rotation   # rotation engine rules
+python3 spikes/check_links.py                  # management links still resolve
+```
+
+Run the tests after any change to `spikes/rotation/`. The test cases pin the
+planning rules (renewal timing, link lookup, savings baseline); port them to
+the real engine when there is one.
+
 ## Hard rules
 
 - **No AI attribution anywhere.** Commit messages, trailers, PR titles and
