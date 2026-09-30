@@ -20,8 +20,9 @@ restart them, and how much the user has saved.
 
 ## Status
 
-Concept and planning only. No code, stack or platform has been chosen yet.
-When one is, add build, test and lint commands and a definition of done here.
+Prototypes done; no app code yet. Leaning iOS first in SwiftUI, Android later.
+When the app project exists, add build, test and lint commands and a
+definition of done here. Prototype findings are in `docs/CONCEPT.md`.
 
 `spikes/` holds throwaway feasibility scripts (Python, standard library only).
 They read `TMDB_API_KEY` (TMDB's API Read Access Token) from `.env` at the repo

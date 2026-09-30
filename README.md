@@ -67,19 +67,24 @@ Rotation modes (Cheapest, Watchlist, Sports, Family, Binge, Never Pay Unused), h
 
 ## Open questions
 
-1. Is the MVP technically feasible end to end?
-2. Which content-availability source (TMDB / JustWatch data, others), and how accurate is it?
-3. How should billing providers be modeled?
-4. Which management URLs and deep links exist for each service and billing provider?
-5. Which platform ships first: iOS, Android, or both?
-6. What's the minimum viable rotation algorithm?
-7. How should price changes, promos, annual plans, bundles, and free trials be handled?
-8. How much can realistically be automated without provider APIs?
-9. Where should the line between free and premium fall?
-10. What should the consumer-facing name be?
+**Answered by the prototypes** (details in [docs/CONCEPT.md](docs/CONCEPT.md#findings-from-the-prototypes-september-2026)):
+
+- **Feasible?** Yes. Content data, the rotation engine and cancel/restart links all work in prototype.
+- **Content source:** TMDB for movies and TV. It doesn't cover sports.
+- **Billing providers:** modeled separately from services, with a link list for 8 services and 7 billers.
+- **Rotation algorithm:** cheapest set of services covering the watchlist, packed into months under the budget, timed to renewal dates.
+- **Platform:** leaning iOS first (SwiftUI), Android later.
+
+**Still open:**
+
+1. How accurate is availability data across a larger, real watchlist?
+2. Where does sports availability come from?
+3. How should promos, annual plans, bundles, free trials, and Prime membership be handled?
+4. Where should the line between free and premium fall?
+5. What should the consumer-facing name be?
 
 **The key thing to validate:** do users get enough value from the *watchlist → rotation → savings* loop to come back every month?
 
 ## Status
 
-Early concept and planning. No code yet.
+Prototypes done (`spikes/`: TMDB lookup, rotation engine, management links, tests). Next: the iOS app.

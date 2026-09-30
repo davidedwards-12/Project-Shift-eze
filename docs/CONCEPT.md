@@ -246,22 +246,84 @@ Previously considered:
 | BingeCycle  | Unchecked                         |
 | StreamFlip  | Unchecked                         |
 
+## Findings from the prototypes (September 2026)
+
+Throwaway prototypes in `spikes/` tested the riskiest parts of the loop before
+any app code. What they showed:
+
+### Content availability (TMDB)
+
+- TMDB's watch-provider data (supplied by JustWatch) was correct for every
+  movie and TV title tested, including a 2026 release.
+- **Sports aren't covered.** TMDB only knows movies and TV; "Premier League"
+  matched an unrelated show. Sports Mode needs a different data source or a
+  hand-kept league → service list. Moved out of the MVP.
+- **Provider names need grouping.** TMDB lists "Netflix Standard with Ads",
+  "HBO Max Amazon Channel", "Spectrum On Demand" etc. as separate providers.
+  The app maps them to one service each, and a "... Amazon Channel" entry also
+  tells us who bills it.
+- **Search can pick the wrong match.** Taking the first result is fine for
+  well-known titles, not for ambiguous ones. The app should let the user
+  confirm the match when adding a title.
+- **Licensing:** the free API key is for personal/non-commercial use. A
+  commercial license costs about $150 and is needed before launch. JustWatch's
+  own terms on the provider data need checking too.
+
+### Rotation engine
+
+- A rules-based engine is enough. Step 1 finds the cheapest set of services
+  covering the watchlist by trying every combination (fast at ~15 services).
+  Step 2 packs them into calendar months under the budget, highest-priority
+  titles first.
+- It groups titles on the same service into one month (e.g. two HBO Max shows,
+  two Prime Video shows) and reuses a service it already needs rather than
+  adding another.
+- **Renewal timing:** a renewal after the 15th pays mostly for the next month.
+  So a service renewing on the 28th that's needed next month is kept, not
+  cancelled and restarted; one renewing on the 22nd can be cancelled while
+  still being used this month.
+- **Savings must be monthly, not totals.** Comparing plan totals against
+  "current services × plan length" inflated savings whenever a smaller budget
+  stretched the plan out. The baseline is now: every current service, plus
+  anything the watchlist needs that isn't current, kept every month, compared
+  with the rotation's average month.
+- On a real seven-title watchlist at $40/mo: $26.65/mo average vs. $92.94/mo
+  without rotation (placeholder prices).
+
+### Cancel / restart links
+
+- A link list covers 8 services and 7 billing providers (Apple, Google Play,
+  Amazon Channels, Roku, YouTube, Xfinity, Verizon), each sourced from the
+  provider's own help pages. Apple has an iOS deep link straight to the
+  Subscriptions screen.
+- **The biller isn't always in control.** Roku bills for Disney+ and Hulu but
+  can't cancel them; the service does.
+- **Xfinity StreamSaver ends access immediately** when cancelled, not at the
+  end of the cycle. "Cancel before renewal" is wrong advice there.
+- **Verizon myPlan** contracts may require keeping at least one perk, so some
+  services can't be rotated to zero.
+- **Prime Video is usually part of Amazon Prime.** Cancelling it drops
+  shipping too, so for Prime members it should cost $0 and not rotate.
+- **Netflix hides its Cancel button** when a partner bills it, which is why
+  routing by billing provider matters.
+- Links move (Hulu is being folded into the Disney+ app by end of 2026), so a
+  checker script runs over the whole list.
+
 ## Open questions
 
-1. Is the concept technically feasible as an MVP?
-2. Which content database/API should be used?
-3. How accurately can the app determine where content is available?
-4. How should billing providers be represented?
-5. What subscription-management URLs/deep links are available for each
-   provider?
-6. Which platforms first — iOS, Android, or both?
-7. What is the minimum viable rotation algorithm?
-8. How should the app handle price changes, promotions, annual plans, bundles,
-   and free trials?
-9. How much automation is realistically possible without official provider
-   APIs?
-10. What should be free vs. premium?
-11. What is the best consumer-facing name/brand?
+| # | Question | Status |
+| --- | --- | --- |
+| 1 | Is the concept technically feasible as an MVP? | **Yes.** Data, rotation engine and links all work in prototype. |
+| 2 | Which content database/API should be used? | **TMDB** for movies and TV. Sports still needs a source. |
+| 3 | How accurately can the app determine where content is available? | **Good for movies/TV** in testing so far; needs a larger real-world check. |
+| 4 | How should billing providers be represented? | **Separately from the service**, with per-provider links and exceptions (e.g. Roku + Disney+). |
+| 5 | What subscription-management URLs/deep links exist? | **Mapped** for 8 services and 7 billers; 4 still need a signed-in check. |
+| 6 | Which platforms first? | **Leaning iOS first (SwiftUI).** Android after the core loop is proven. |
+| 7 | What is the minimum viable rotation algorithm? | **Answered:** cheapest cover + monthly packing + renewal-timing rules. |
+| 8 | Price changes, promotions, annual plans, bundles, free trials? | Open. Prime-as-$0 and carrier bundles are the first cases to handle. |
+| 9 | How much automation without provider APIs? | Links and reminders only, as planned. No change. |
+| 10 | What should be free vs. premium? | Open. |
+| 11 | Best consumer-facing name/brand? | Open. |
 
 **Most important to validate:** whether users find enough value in the
 **watchlist → rotation → savings** loop to use the app repeatedly.
