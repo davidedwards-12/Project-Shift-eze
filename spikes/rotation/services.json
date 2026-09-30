@@ -5,9 +5,9 @@
     {"name": "HBO Max",     "price": 16.99, "current": true,  "renews": 28, "billed_through": "HBO Max", "aliases": ["Max", "HBO Max Amazon Channel", "HBO Max Basic with Ads"]},
     {"name": "Disney+",     "price": 15.99, "current": true,  "renews": 1,  "billed_through": "Disney+", "aliases": ["Disney Plus", "Disney Plus with Ads"]},
     {"name": "Hulu",        "price": 18.99, "current": false, "aliases": []},
-    {"name": "Peacock",     "price": 12.99, "current": true,  "renews": 15, "billed_through": "Peacock", "aliases": ["Peacock Premium", "Peacock Premium Plus"]},
+    {"name": "Peacock",     "price": 19.99, "current": true,  "renews": 15, "billed_through": "Peacock", "aliases": ["Peacock Premium", "Peacock Premium Plus"]},
     {"name": "Apple TV+",   "price": 12.99, "current": true,  "renews": 5,  "billed_through": "Apple",   "aliases": ["Apple TV", "Apple TV Plus", "Apple TV Amazon Channel"]},
-    {"name": "Paramount+",  "price": 12.99, "current": false, "aliases": ["Paramount Plus", "Paramount+ with Showtime"]},
+    {"name": "Paramount+",  "price": 12.99, "current": false, "aliases": ["Paramount Plus", "Paramount+ with Showtime", "Paramount Plus Premium", "Paramount Plus Essential", "Paramount+ Amazon Channel", "Paramount+ Roku Premium Channel"]},
     {"name": "Prime Video", "price": 8.99,  "current": false, "aliases": ["Amazon Prime Video", "Amazon Prime Video with Ads"]}
   ]
 }

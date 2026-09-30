@@ -5,7 +5,10 @@ Usage:
     python3 spikes/tmdb_availability.py [watchlist.txt] [--region US] [--json OUT]
 
 --json writes the matches in the rotation engine's watchlist format
-(subscription providers only), e.g. --json spikes/rotation/watchlist.json
+(subscription providers, plus free/ad-supported ones under "free"), e.g. --json spikes/rotation/watchlist.json
+
+Watchlist lines are titles; add a year to pick the right one when several
+share a name, e.g. "Boy Friends (2025)".
 
 Reads TMDB_API_KEY from .env at the repo root (Read Access Token or v3 key).
 Watch-provider data is supplied to TMDB by JustWatch.
@@ -13,6 +16,7 @@ Watch-provider data is supplied to TMDB by JustWatch.
 
 import argparse
 import json
+import re
 import sys
 import urllib.parse
 import urllib.request
@@ -45,9 +49,18 @@ def get(key, path, **params):
 
 
 def find_title(key, query):
-    """Best match among movies and TV shows, or None."""
+    """Best match among movies and TV shows, or None.
+
+    A trailing year, e.g. "Boy Friends (2025)", picks the release from that year.
+    """
+    year = None
+    m = re.fullmatch(r"(.*?)\s*\((\d{4})\)", query)
+    if m:
+        query, year = m.group(1), m.group(2)
     results = get(key, "/search/multi", query=query)["results"]
     results = [r for r in results if r.get("media_type") in ("movie", "tv")]
+    if year:
+        results = [r for r in results if (r.get("release_date") or r.get("first_air_date") or "").startswith(year)]
     return results[0] if results else None
 
 
@@ -85,7 +98,7 @@ def main():
         year = (match.get("release_date") or match.get("first_air_date") or "")[:4]
         print(f"\n{query}  →  {name} ({year}, {match['media_type']})")
         found = providers(key, match["media_type"], match["id"], args.region)
-        rows.append({"title": name, "services": found["subscription"]})
+        rows.append({"title": name, "services": found["subscription"], "free": found["free/ads"]})
         if not any(found.values()):
             print(f"  (no providers listed for {args.region})")
         for kind, names in found.items():

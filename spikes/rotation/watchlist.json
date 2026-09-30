@@ -6,7 +6,8 @@
       "services": [
         "Netflix",
         "Netflix Standard with Ads"
-      ]
+      ],
+      "free": []
     },
     {
       "title": "The Last of Us",
@@ -14,26 +15,33 @@
         "HBO Max Amazon Channel",
         "Spectrum On Demand",
         "HBO Max"
-      ]
+      ],
+      "free": []
     },
     {
       "title": "Severance",
       "services": [
         "Apple TV",
         "Apple TV Amazon Channel"
-      ]
+      ],
+      "free": []
     },
     {
       "title": "Andor",
       "services": [
         "Disney Plus"
-      ]
+      ],
+      "free": []
     },
     {
       "title": "The Summer I Turned Pretty",
       "services": [
         "Amazon Prime Video",
         "Amazon Prime Video with Ads"
+      ],
+      "free": [
+        "Amazon Prime Video Free with Ads",
+        "Amazon MX Player"
       ]
     },
     {
@@ -41,14 +49,148 @@
       "services": [
         "HBO Max Amazon Channel",
         "HBO Max"
-      ]
+      ],
+      "free": []
     },
     {
       "title": "Reacher",
       "services": [
         "Amazon Prime Video",
         "Amazon Prime Video with Ads"
+      ],
+      "free": [
+        "Amazon Prime Video Free with Ads",
+        "Amazon MX Player"
       ]
+    },
+    {
+      "title": "Fighting Spirit",
+      "services": [
+        "Netflix",
+        "Philo",
+        "Crunchyroll Amazon Channel",
+        "Netflix Standard with Ads",
+        "RetroCrush Amazon Channel",
+        "Cineverse Amazon Channel"
+      ],
+      "free": [
+        "Fawesome",
+        "Retrocrush",
+        "AsianCrush",
+        "Plex",
+        "Plex Channel",
+        "Cineverse"
+      ]
+    },
+    {
+      "title": "War of the Worlds",
+      "services": [
+        "Apple TV",
+        "HBO Max Amazon Channel",
+        "Paramount Plus Premium",
+        "Paramount Plus Essential",
+        "Paramount+ Amazon Channel",
+        "Paramount+ Roku Premium Channel",
+        "Cinemax Amazon Channel",
+        "HBO Max",
+        "Cinemax Apple TV channel",
+        "Starz Apple TV channel",
+        "Apple TV Amazon Channel"
+      ],
+      "free": [
+        "Kanopy",
+        "Xumo Play"
+      ]
+    },
+    {
+      "title": "Event Horizon",
+      "services": [
+        "fuboTV",
+        "Paramount Plus Premium",
+        "Paramount Plus Essential",
+        "Paramount+ Amazon Channel",
+        "Paramount+ Roku Premium Channel"
+      ],
+      "free": [
+        "Kanopy"
+      ]
+    },
+    {
+      "title": "Tropic Thunder",
+      "services": [
+        "Hulu",
+        "Paramount Plus Premium",
+        "Paramount Plus Essential",
+        "Paramount+ Amazon Channel",
+        "Paramount+ Roku Premium Channel"
+      ],
+      "free": [
+        "Kanopy",
+        "YouTube Free"
+      ]
+    },
+    {
+      "title": "The Super Hero Squad Show",
+      "services": [
+        "Disney Plus"
+      ],
+      "free": []
+    },
+    {
+      "title": "Katak: The Brave Beluga",
+      "services": [
+        "Hulu"
+      ],
+      "free": []
+    },
+    {
+      "title": "Oddbods (Shorts)",
+      "services": [
+        "Amebatv Amazon Channel"
+      ],
+      "free": [
+        "Hoopla",
+        "Fawesome"
+      ]
+    },
+    {
+      "title": "Good Luck, Have Fun, Don't Die",
+      "services": [
+        "Hulu"
+      ],
+      "free": []
+    },
+    {
+      "title": "Before Sunrise",
+      "services": [],
+      "free": [
+        "The Roku Channel",
+        "Tubi TV"
+      ]
+    },
+    {
+      "title": "Boy Friends",
+      "services": [],
+      "free": [
+        "Fawesome",
+        "Tubi TV"
+      ]
+    },
+    {
+      "title": "Gentleman Jack",
+      "services": [
+        "HBO Max Amazon Channel",
+        "HBO Max"
+      ],
+      "free": []
+    },
+    {
+      "title": "White House Plumbers",
+      "services": [
+        "HBO Max Amazon Channel",
+        "HBO Max"
+      ],
+      "free": []
     }
   ]
 }

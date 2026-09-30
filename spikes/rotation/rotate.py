@@ -7,6 +7,9 @@ Usage:
 Model (v1):
   - Each title must be watched on one service that carries it, for `months`
     consecutive months (default 1).
+  - Titles free on a trusted service (TRUSTED_FREE: Tubi, The Roku Channel,
+    etc.) are listed separately and never drive a subscription. Library
+    services (Kanopy, Hoopla) are shown as an option but still get a paid plan.
   - Step 1 picks the cheapest set of services covering every title (exhaustive
     search; fine for ~15 services).
   - Step 2 packs those services into months without exceeding the budget,
@@ -37,6 +40,13 @@ HERE = Path(__file__).resolve().parent
 LINKS = json.loads((HERE / "management_links.json").read_text())
 
 
+# TMDB's "free" category is noisy (e.g. "Amazon Prime Video Free with Ads" on
+# Prime originals). Only these count as genuinely free.
+TRUSTED_FREE = {"tubi tv", "the roku channel", "pluto tv", "plex", "plex channel", "youtube free", "fawesome"}
+# Free, but only with a library card: shown as an option, never relied on.
+LIBRARY = {"kanopy", "hoopla"}
+
+
 def load(services_path, watchlist_path):
     return prepare(
         json.loads(Path(services_path).read_text())["services"],
@@ -55,8 +65,19 @@ def prepare(services, raw_titles):
     for t in raw_titles:
         # Normalize provider names; drop providers we don't track (e.g. cable VOD).
         on = sorted({lookup[p.lower()] for p in t["services"] if p.lower() in lookup})
-        titles.append({"title": t["title"], "services": on, "months": t.get("months", 1)})
+        titles.append({
+            "title": t["title"],
+            "services": on,
+            "free": [p for p in t.get("free", []) if p.lower() in TRUSTED_FREE],
+            "library": [p for p in t.get("free", []) if p.lower() in LIBRARY],
+            "months": t.get("months", 1),
+        })
     return {s["name"]: s for s in services}, titles
+
+
+def split_free(titles):
+    """(free, paid): titles watchable free need no subscription at all."""
+    return [t for t in titles if t["free"]], [t for t in titles if not t["free"]]
 
 
 def assign(titles, chosen, services):
@@ -207,6 +228,20 @@ def main():
         start = on_day(today.replace(day=1), 1, 1)
 
     services, titles = load(args.services, args.watchlist)
+
+    free, titles = split_free(titles)
+    if free:
+        print("Free — no subscription needed")
+        for t in free:
+            print(f"  {t['title']:<40} {', '.join(t['free'])}")
+        print()
+
+    library = [t for t in titles if t["library"]]
+    if library:
+        print("Also free with a library card")
+        for t in library:
+            print(f"  {t['title']:<40} {', '.join(t['library'])}")
+        print()
 
     uncovered = [t["title"] for t in titles if not t["services"]]
     if uncovered:

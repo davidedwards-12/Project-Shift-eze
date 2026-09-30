@@ -97,6 +97,25 @@ class Planning(unittest.TestCase):
         _, titles = rotate.prepare(self.SERVICES, self.TITLES)
         self.assertEqual(titles[2]["services"], ["Netflix"])  # alias mapped, Spectrum dropped
 
+    def test_free_titles_are_kept_out_of_the_plan(self):
+        services, titles = rotate.prepare(self.SERVICES, self.TITLES + [
+            {"title": "Before Sunrise", "services": [], "free": ["Tubi TV", "The Roku Channel"]},
+            {"title": "Tropic Thunder", "services": ["Hulu"], "free": ["YouTube Free"]},
+        ])
+        free, paid = rotate.split_free(titles)
+        self.assertEqual([t["title"] for t in free], ["Before Sunrise", "Tropic Thunder"])
+        _, assignment, need = rotate.cheapest_cover(paid, services, 40)
+        self.assertNotIn("Hulu", need)  # Tropic Thunder is free, so it doesn't pull Hulu in
+
+    def test_untrusted_and_library_free_listings_still_get_a_paid_plan(self):
+        _, titles = rotate.prepare(self.SERVICES, [
+            {"title": "Reacher", "services": ["Amazon Prime Video"], "free": ["Amazon Prime Video Free with Ads"]},
+            {"title": "Event Horizon", "services": ["Hulu"], "free": ["Kanopy"]},
+        ])
+        free, paid = rotate.split_free(titles)
+        self.assertEqual(free, [])
+        self.assertEqual(paid[1]["library"], ["Kanopy"])
+
     def test_reuses_a_needed_service_instead_of_adding_another(self):
         # The Bear is on Hulu and Disney+; Andor already needs Disney+.
         _, _, assignment, need, _ = self.plan(40)

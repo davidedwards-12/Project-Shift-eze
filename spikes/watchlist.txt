@@ -1,4 +1,5 @@
 # One title per line. Lines starting with # are ignored.
+# Add a year if several titles share a name, e.g. "Boy Friends (2025)".
 Stranger Things
 The Last of Us
 Severance
@@ -7,7 +8,7 @@ The Summer I Turned Pretty
 Lanterns
 Reacher
 Hajime no Ippo: The Fighting!
-War of the Worlds
+War of the Worlds (2005)
 Event Horizon
 Tropic Thunder
 The Super Hero Squad Show
@@ -15,6 +16,6 @@ Katak the Brave Beluga
 Oddbods
 Good Luck Have Fun Don't Die
 Before Sunrise
-Boy Friends
+Boy Friends (2025)
 Gentleman Jack
 White House Plumbers
