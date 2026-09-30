@@ -8,7 +8,8 @@ Model (v1):
   - Each title must be watched on one service that carries it, for `months`
     consecutive months (default 1).
   - Titles free on a trusted service (TRUSTED_FREE: Tubi, The Roku Channel,
-    etc.) are listed separately and never drive a subscription. Library
+    etc.) never drive a subscription. If a planned or current paid service
+    carries one, it's shown there (ad-free); otherwise it's listed as free. Library
     services (Kanopy, Hoopla) are shown as an option but still get a paid plan.
   - Step 1 picks the cheapest set of services covering every title (exhaustive
     search; fine for ~15 services).
@@ -78,6 +79,29 @@ def prepare(services, raw_titles):
 def split_free(titles):
     """(free, paid): titles watchable free need no subscription at all."""
     return [t for t in titles if t["free"]], [t for t in titles if not t["free"]]
+
+
+def place_free(free, months, services):
+    """Where to watch each free title without ads, if you'll be paying anyway.
+
+    Returns (in_plan, on_current, free_only):
+      in_plan    {title: (month index, service)}: earliest planned month with a
+                 service that carries it
+      on_current {title: service}: a service you pay for now but the plan drops
+      free_only  [title]: no paid option you'll have; watch it free
+    Free titles never add a service or change the plan's cost.
+    """
+    in_plan, on_current, free_only = {}, {}, []
+    for t in free:
+        spot = next(((i, s) for i, m in enumerate(months) for s in t["services"] if s in m), None)
+        current = [s for s in t["services"] if services[s]["current"]]
+        if spot:
+            in_plan[t["title"]] = spot
+        elif current:
+            on_current[t["title"]] = current[0]
+        else:
+            free_only.append(t["title"])
+    return in_plan, on_current, free_only
 
 
 def assign(titles, chosen, services):
@@ -230,18 +254,6 @@ def main():
     services, titles = load(args.services, args.watchlist)
 
     free, titles = split_free(titles)
-    if free:
-        print("Free — no subscription needed")
-        for t in free:
-            print(f"  {t['title']:<40} {', '.join(t['free'])}")
-        print()
-
-    library = [t for t in titles if t["library"]]
-    if library:
-        print("Also free with a library card")
-        for t in library:
-            print(f"  {t['title']:<40} {', '.join(t['library'])}")
-        print()
 
     uncovered = [t["title"] for t in titles if not t["services"]]
     if uncovered:
@@ -253,16 +265,40 @@ def main():
         sys.exit("No plan fits: some title is only on services priced above the budget.")
     _, assignment, need = best
     months = schedule(titles, services, assignment, need, args.budget)
+    plan_actions = actions(services, months, start, today)
+    in_plan, on_current, free_only = place_free(free, months, services)
+    free_on = {t["title"]: t["free"] for t in free}
 
     for i, month in enumerate(months):
         watching = [t["title"] for t in titles if assignment[t["title"]] in month]
         print(f"{on_day(start, i, 1):%B %Y} — ${sum(month.values()):.2f}")
         for s, price in month.items():
             shows = [t for t in watching if assignment[t] == s]
+            shows += [f"{t}*" for t, (j, svc) in in_plan.items() if j == i and svc == s]
             print(f"  {s:<12} ${price:>6.2f}   {', '.join(shows)}")
+    if in_plan:
+        print("  * also free with ads elsewhere; watch here ad-free since you'll have it anyway")
+
+    if on_current:
+        print("\nOn a service you pay for now (watch before you cancel it)")
+        for t, s in on_current.items():
+            cancel = next((w for w, what, _, _ in plan_actions if what == f"Cancel {s}"), None)
+            by = f" by {cancel:%b %d}" if cancel else ""
+            print(f"  {t:<40} {s}{by}  (or free: {', '.join(free_on[t])})")
+
+    if free_only:
+        print("\nFree — no subscription needed")
+        for t in free_only:
+            print(f"  {t:<40} {', '.join(free_on[t])}")
+
+    library = [t for t in titles if t["library"]]
+    if library:
+        print("\nAlso free with a library card")
+        for t in library:
+            print(f"  {t['title']:<40} {', '.join(t['library'])}")
 
     print("\nUpcoming actions")
-    for when, what, how, link in actions(services, months, start, today):
+    for when, what, how, link in plan_actions:
         print(f"  {when:%b %d}  {what:<22} {how}")
         if link:
             print(f"          → {link}")

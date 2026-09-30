@@ -151,6 +151,36 @@ class Planning(unittest.TestCase):
         self.assertAlmostEqual(b1, 24.99 + 15.99 + 8.99)
 
 
+class FreeTitlePlacement(unittest.TestCase):
+    SERVICES = {
+        "Netflix": service("Netflix", 24.99),
+        "Hulu": service("Hulu", 18.99),
+        "Peacock": service("Peacock", 12.99, current=True),
+    }
+
+    def free(self, title, *on):
+        return {"title": title, "services": list(on), "free": ["Tubi TV"]}
+
+    def test_free_title_on_a_planned_service_goes_in_that_month(self):
+        months = [{"Netflix": 24.99}, {"Hulu": 18.99}]
+        in_plan, _, _ = rotate.place_free([self.free("Tropic Thunder", "Hulu")], months, self.SERVICES)
+        self.assertEqual(in_plan, {"Tropic Thunder": (1, "Hulu")})
+
+    def test_earliest_planned_month_wins(self):
+        months = [{"Netflix": 24.99}, {"Hulu": 18.99}]
+        in_plan, _, _ = rotate.place_free([self.free("X", "Hulu", "Netflix")], months, self.SERVICES)
+        self.assertEqual(in_plan, {"X": (0, "Netflix")})
+
+    def test_free_title_on_a_current_service_the_plan_drops(self):
+        _, on_current, _ = rotate.place_free([self.free("Poker Face", "Peacock")], [{"Netflix": 24.99}], self.SERVICES)
+        self.assertEqual(on_current, {"Poker Face": "Peacock"})
+
+    def test_free_only_when_no_paid_option_you_will_have(self):
+        _, _, free_only = rotate.place_free(
+            [self.free("Before Sunrise"), self.free("Y", "Hulu")], [{"Netflix": 24.99}], self.SERVICES)
+        self.assertEqual(free_only, ["Before Sunrise", "Y"])
+
+
 class ManagementLinks(unittest.TestCase):
     def link(self, service, biller):
         return rotate.management_link(rotate.LINKS, service, biller)
