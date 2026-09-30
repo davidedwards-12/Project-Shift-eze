@@ -1,0 +1,124 @@
+{
+  "_note": "Where to cancel/restart each subscription, by who bills it. US only. Researched 2026-09-29 from each provider's own help pages ('source'). 'verified': false = path inferred from help-page steps, not confirmed as a direct URL. These change; recheck before shipping.",
+
+  "services": {
+    "Netflix": {
+      "manage": "https://www.netflix.com/account",
+      "cancel": "https://www.netflix.com/cancelplan",
+      "verified": true,
+      "note": "If billed by T-Mobile, Verizon, Comcast, Apple or Google, the Cancel button may not appear; cancel with the billing partner.",
+      "source": "https://help.netflix.com/en/node/407"
+    },
+    "HBO Max": {
+      "manage": "https://www.hbomax.com/subscription",
+      "cancel": "https://www.hbomax.com/subscription",
+      "verified": true,
+      "note": "Sign in, choose Cancel Your Subscription. No cancel option = third-party billed; the page names who bills it.",
+      "source": "https://help.hbomax.com/us/Answer/Detail/000002526"
+    },
+    "Disney+": {
+      "manage": "https://www.disneyplus.com/account",
+      "cancel": "https://www.disneyplus.com/account",
+      "verified": false,
+      "note": "Account > Subscription > select Disney+ > Cancel Subscription. Billing partner is shown under Your Plans & Billing.",
+      "source": "https://help.disneyplus.com/article/disneyplus-cancel"
+    },
+    "Hulu": {
+      "manage": "https://secure.hulu.com/account",
+      "cancel": "https://secure.hulu.com/account",
+      "verified": true,
+      "note": "'Your Subscription' shows who bills it.",
+      "source": "https://help.hulu.com/article/hulu-cancel-hulu-subscription"
+    },
+    "Peacock": {
+      "manage": "https://www.peacocktv.com/account/plans",
+      "cancel": "https://www.peacocktv.com/account/plans",
+      "verified": true,
+      "note": "Account > Plans & Payment > Cancel Plan. Third-party billed (Apple, Google, Roku, Amazon, Xfinity...) must cancel there.",
+      "source": "https://www.peacocktv.com/help/article/cancellation"
+    },
+    "Paramount+": {
+      "manage": "https://www.paramountplus.com/account/",
+      "cancel": "https://www.paramountplus.com/account/",
+      "verified": true,
+      "note": "Click Cancel Subscription on the account page.",
+      "source": "https://support.paramountplus.com/s/article/PI-How-do-I-cancel-my-subscription?language=en_US"
+    },
+    "Prime Video": {
+      "manage": "https://www.amazon.com/yourmembershipsandsubscriptions",
+      "cancel": "https://www.amazon.com/yourmembershipsandsubscriptions",
+      "verified": true,
+      "note": "Usually part of Amazon Prime. Cancelling Prime drops shipping and every other Prime benefit too, so most users won't rotate it.",
+      "source": "https://www.amazon.com/gp/help/customer/display.html?nodeId=GEQ6EJ9T8P2V5BHG"
+    },
+    "Apple TV+": {
+      "manage": "https://account.apple.com/account/manage/section/subscriptions",
+      "cancel": "https://account.apple.com/account/manage/section/subscriptions",
+      "verified": true,
+      "note": "Always billed by Apple, or by a partner (Amazon Channels, a carrier).",
+      "source": "https://support.apple.com/en-us/118428"
+    }
+  },
+
+  "billers": {
+    "Apple": {
+      "web": "https://account.apple.com/account/manage/section/subscriptions",
+      "ios": "itms-apps://apps.apple.com/account/subscriptions",
+      "android": "https://account.apple.com/account/manage/section/subscriptions",
+      "verified": true,
+      "note": "On iPhone: Settings > your name > Subscriptions. The iOS link opens the same screen directly.",
+      "source": "https://support.apple.com/en-us/118428"
+    },
+    "Google Play": {
+      "aliases": ["Google"],
+      "web": "https://play.google.com/store/account/subscriptions",
+      "android": "https://play.google.com/store/account/subscriptions",
+      "verified": true,
+      "note": "Add ?package=<app id>&sku=<product id> to open one subscription directly.",
+      "source": "https://developer.android.com/google/play/billing/subscriptions"
+    },
+    "Amazon": {
+      "aliases": ["Amazon Channels", "Prime Video Channels"],
+      "web": "https://www.amazon.com/yourmembershipsandsubscriptions",
+      "verified": true,
+      "note": "Covers Prime Video Channels add-ons (e.g. 'HBO Max Amazon Channel').",
+      "source": "https://www.primevideo.com/help?nodeId=G3BQ95AL4WZLV9ZG"
+    },
+    "Roku": {
+      "web": "https://my.roku.com/subscriptions",
+      "verified": true,
+      "note": "Manage subscription > Turn off auto-renew. Access continues to the end of the billing cycle.",
+      "source": "https://support.roku.com/article/manage-or-cancel-subscriptions"
+    },
+    "YouTube": {
+      "aliases": ["YouTube Primetime Channels", "YouTube TV"],
+      "web": "https://www.youtube.com/paid_memberships",
+      "verified": true,
+      "note": "YouTube TV add-ons are under tv.youtube.com > Settings > Membership instead.",
+      "source": "https://help.hbomax.com/us/Answer/Detail/000002526"
+    },
+    "Xfinity": {
+      "aliases": ["Comcast"],
+      "web": "https://www.xfinity.com/support/articles/cancel-streaming",
+      "verified": false,
+      "note": "Help article, not a direct account page. Cancelling StreamSaver ends access IMMEDIATELY, not at the end of the cycle.",
+      "source": "https://www.xfinity.com/support/articles/cancel-streaming"
+    },
+    "Verizon": {
+      "web": "https://www.verizon.com/support/knowledge-base-233617/",
+      "verified": false,
+      "note": "My Verizon > Products & plan perks > select the perk > Unsubscribe. myPlan contracts may require keeping at least one perk.",
+      "source": "https://www.verizon.com/support/disney-bundle-faqs/"
+    }
+  },
+
+  "exceptions": [
+    {
+      "services": ["Disney+", "Hulu"],
+      "biller": "Roku",
+      "use": "service",
+      "note": "Roku processes the charge but Disney+/Hulu manage the subscription; Roku can't cancel it.",
+      "source": "https://support.roku.com/article/manage-or-cancel-subscriptions"
+    }
+  ]
+}

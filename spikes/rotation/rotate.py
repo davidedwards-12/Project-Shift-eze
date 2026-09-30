@@ -34,6 +34,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+LINKS = json.loads((HERE / "management_links.json").read_text())
 
 
 def load(services_path, watchlist_path):
@@ -121,6 +122,20 @@ def on_day(start, offset, day):
     return datetime.date(y, m + 1, min(day, calendar.monthrange(y, m + 1)[1]))
 
 
+def management_link(links, service, biller):
+    """URL where this subscription is cancelled/restarted, given who bills it."""
+    for ex in links["exceptions"]:
+        if service in ex["services"] and biller == ex["biller"] and ex["use"] == "service":
+            biller = service
+    if biller == service or biller not in links["billers"]:
+        for name, b in links["billers"].items():
+            if biller in b.get("aliases", []):
+                return b["web"]
+        entry = links["services"].get(service)
+        return entry["manage"] if entry else None
+    return links["billers"][biller]["web"]
+
+
 def actions(services, months, start, today):
     """What to keep, cancel and restart, and by when.
 
@@ -135,25 +150,26 @@ def actions(services, months, start, today):
             continue
         via = s.get("billed_through", name)
         day = s.get("renews", 1) if s["current"] else 1
+        link = management_link(LINKS, name, via)
         subscribed, kept = s["current"], False
         for k in range(len(months) + 1):
             renewal = on_day(start, k - (1 if day > 15 else 0), day)
             if renewal < today:
                 continue  # already paid for
             if subscribed and k not in active:
-                events.append((renewal, f"Cancel {name}", f"before it renews, through {via}"))
+                events.append((renewal, f"Cancel {name}", f"before it renews, through {via}", link))
                 if not active or k > max(active):
                     break
                 subscribed = False
             elif subscribed and not kept:
-                events.append((renewal, f"Keep {name}", f"renews, billed through {via}"))
+                events.append((renewal, f"Keep {name}", f"renews, billed through {via}", None))
                 kept = True
             elif not subscribed and k in active:
                 verb = "Restart" if s["current"] else "Start"
                 day = 1
-                events.append((on_day(start, k, 1), f"{verb} {name}", f"through {via}"))
+                events.append((on_day(start, k, 1), f"{verb} {name}", f"through {via}", link))
                 subscribed, kept = True, True
-    return sorted(events)
+    return sorted(events, key=lambda e: e[:3])
 
 
 def main():
@@ -191,8 +207,10 @@ def main():
             print(f"  {s:<12} ${price:>6.2f}   {', '.join(shows)}")
 
     print("\nUpcoming actions")
-    for when, what, how in actions(services, months, start, today):
+    for when, what, how, link in actions(services, months, start, today):
         print(f"  {when:%b %d}  {what:<22} {how}")
+        if link:
+            print(f"          → {link}")
 
     current = [n for n, s in services.items() if s["current"]]
     added = [n for n in need if not services[n]["current"]]
