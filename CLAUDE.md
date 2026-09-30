@@ -20,9 +20,24 @@ restart them, and how much the user has saved.
 
 ## Status
 
-Prototypes done; no app code yet. Leaning iOS first in SwiftUI, Android later.
-When the app project exists, add build, test and lint commands and a
-definition of done here. Prototype findings are in `docs/CONCEPT.md`.
+iOS first in SwiftUI (iOS 26+), Android later. Prototype findings are in
+`docs/CONCEPT.md`.
+
+`ios/RotationEngine/` is a Swift package with the planning logic (no UI):
+which services cover the watchlist, the month-by-month schedule, dated
+cancel/restart actions, management links and savings. Prices are whole cents;
+dates are `CalendarDate` (no times or time zones). The app will depend on it.
+
+```bash
+swift test --package-path ios/RotationEngine
+```
+
+`ParityTests` checks the Swift engine plans exactly like the Python spike on
+the real watchlist. Its fixtures (`Tests/RotationEngineTests/Fixtures/`) are
+copies of `spikes/rotation/services.json` and `watchlist.json` plus the Python
+output; regenerate all three together if the planning rules change.
+`management_links.json` lives in the package; the Python scripts read it
+from there.
 
 `spikes/` holds throwaway feasibility scripts (Python, standard library only).
 They read `TMDB_API_KEY` (TMDB's API Read Access Token) from `.env` at the repo
@@ -33,9 +48,8 @@ python3 -m unittest discover spikes/rotation   # rotation engine rules
 python3 spikes/check_links.py                  # management links still resolve
 ```
 
-Run the tests after any change to `spikes/rotation/`. The test cases pin the
-planning rules (renewal timing, link lookup, savings baseline); port them to
-the real engine when there is one.
+Run the tests after any change to `spikes/rotation/`. They pin the same
+planning rules as the Swift tests.
 
 ## Hard rules
 
@@ -56,8 +70,6 @@ the real engine when there is one.
 
 ## Git
 
-- Solo repo, docs and spikes only: committing and pushing straight to `main`
-  is fine.
-- Once app code exists, switch to a branch per change and a PR into `main`,
-  and update this section.
+- App code exists now: one branch per change and a PR into `main`. Don't
+  commit app code straight to `main`.
 - Short, imperative commit subjects describing what changed.

@@ -4,3 +4,9 @@
 # macOS
 .DS_Store
 __pycache__/
+
+# Swift
+.build/
+.swiftpm/
+xcuserdata/
+DerivedData/

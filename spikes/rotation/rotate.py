@@ -9,8 +9,9 @@ Model (v1):
     consecutive months (default 1).
   - Titles free on a trusted service (TRUSTED_FREE: Tubi, The Roku Channel,
     etc.) never drive a subscription. If a planned or current paid service
-    carries one, it's shown there (ad-free); otherwise it's listed as free. Library
-    services (Kanopy, Hoopla) are shown as an option but still get a paid plan.
+    carries one, it's shown there (ad-free); otherwise it's listed as free.
+    Library services (Kanopy, Hoopla) are shown as an option but still get a
+    paid plan.
   - Step 1 picks the cheapest set of services covering every title (exhaustive
     search; fine for ~15 services).
   - Step 2 packs those services into months without exceeding the budget,
@@ -21,15 +22,15 @@ Model (v1):
   - Upcoming actions list what to keep, cancel and restart, and by when,
     through whoever bills the service.
   - Savings compare average monthly spend: the rotation vs. keeping what you
-    pay for now. Conservative: it doesn't assume you'd otherwise add every
-    service the watchlist needs.
+    pay for now. Monthly, not totals, so a smaller budget that stretches the
+    plan over more months doesn't inflate the number. Conservative: it doesn't
+    assume you'd otherwise add every service the watchlist needs.
   - Memberships (e.g. amazon_prime in services.json) make a service with a
     matching "included_with" free; its titles never drive a subscription.
-    Monthly, not totals, so a smaller budget that stretches the plan over more
-    months doesn't inflate the number.
 
 Not modeled yet: annual plans, promos, bundles, days already paid for before a
-cancellation takes effect beyond the half-month rule above, titles that leave a service, new titles mid-plan.
+cancellation takes effect beyond the half-month rule above, titles that leave a
+service, new titles mid-plan.
 """
 
 import argparse
@@ -41,7 +42,8 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-LINKS = json.loads((HERE / "management_links.json").read_text())
+# Shared with the Swift engine; the package copy is the source of truth.
+LINKS = json.loads((HERE.parent.parent / "ios/RotationEngine/Sources/RotationEngine/Resources/management_links.json").read_text())
 
 
 # TMDB's "free" category is noisy (e.g. "Amazon Prime Video Free with Ads" on

@@ -17,7 +17,7 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-LINKS = Path(__file__).resolve().parent / "rotation" / "management_links.json"
+LINKS = Path(__file__).resolve().parent.parent / "ios/RotationEngine/Sources/RotationEngine/Resources/management_links.json"
 FIELDS = ("manage", "cancel", "web", "android", "source")
 HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 Safari/605.1.15"}
 
