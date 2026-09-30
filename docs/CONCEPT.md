@@ -284,11 +284,17 @@ any app code. What they showed:
   still being used this month.
 - **Savings must be monthly, not totals.** Comparing plan totals against
   "current services × plan length" inflated savings whenever a smaller budget
-  stretched the plan out. The baseline is now: every current service, plus
-  anything the watchlist needs that isn't current, kept every month, compared
-  with the rotation's average month.
-- On a real seven-title watchlist at $40/mo: $26.65/mo average vs. $92.94/mo
-  without rotation (placeholder prices).
+  stretched the plan out.
+- **Savings baseline is what you pay for now.** An earlier baseline also added
+  every service the watchlist needed, kept forever, which inflated savings on
+  big watchlists (~$1,247/yr vs ~$756/yr on the test list). Now it's current
+  services only.
+- **Plan savings are only a preview.** A per-month average can't fairly compare
+  plans of different lengths (finishing sooner looks like saving less). The
+  app's headline number should be *actual* savings tracked month by month:
+  what you paid vs. what your old subscriptions would have cost.
+- **Memberships:** Prime Video is $0 for Amazon Prime members and never
+  rotated; its titles show as included.
 
 ### Cancel / restart links
 

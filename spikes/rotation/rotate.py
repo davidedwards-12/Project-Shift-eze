@@ -20,8 +20,11 @@ Model (v1):
     starts on the 1st and then renews on the 1st.
   - Upcoming actions list what to keep, cancel and restart, and by when,
     through whoever bills the service.
-  - Savings compare average monthly spend: the rotation vs. keeping every
-    current service and adding whatever the watchlist needs, never cancelling.
+  - Savings compare average monthly spend: the rotation vs. keeping what you
+    pay for now. Conservative: it doesn't assume you'd otherwise add every
+    service the watchlist needs.
+  - Memberships (e.g. amazon_prime in services.json) make a service with a
+    matching "included_with" free; its titles never drive a subscription.
     Monthly, not totals, so a smaller budget that stretches the plan over more
     months doesn't inflate the number.
 
@@ -49,14 +52,23 @@ LIBRARY = {"kanopy", "hoopla"}
 
 
 def load(services_path, watchlist_path):
+    config = json.loads(Path(services_path).read_text())
     return prepare(
-        json.loads(Path(services_path).read_text())["services"],
+        config["services"],
         json.loads(Path(watchlist_path).read_text())["titles"],
+        config.get("memberships", {}),
     )
 
 
-def prepare(services, raw_titles):
-    """Index services by name and normalize each title's provider names."""
+def prepare(services, raw_titles, memberships=None):
+    """Index services by name and normalize each title's provider names.
+
+    A service with "included_with": "<membership>" (e.g. Prime Video with
+    amazon_prime) is free for users who have that membership; its titles are
+    marked "included" and never drive a subscription.
+    """
+    memberships = memberships or {}
+    included = {s["name"] for s in services if memberships.get(s.get("included_with"))}
     lookup = {}
     for s in services:
         for n in [s["name"], *s["aliases"]]:
@@ -71,9 +83,15 @@ def prepare(services, raw_titles):
             "services": on,
             "free": [p for p in t.get("free", []) if p.lower() in TRUSTED_FREE],
             "library": [p for p in t.get("free", []) if p.lower() in LIBRARY],
+            "included": [s for s in on if s in included],
             "months": t.get("months", 1),
         })
     return {s["name"]: s for s in services}, titles
+
+
+def split_included(titles):
+    """(included, rest): titles covered by a membership the user already has."""
+    return [t for t in titles if t["included"]], [t for t in titles if not t["included"]]
 
 
 def split_free(titles):
@@ -225,14 +243,15 @@ def actions(services, months, start, today):
 
 
 def savings(services, need, months):
-    """(baseline $/mo, rotation $/mo, services added to the baseline).
+    """(baseline $/mo, rotation $/mo, services the plan adds).
 
-    Baseline = every current service plus whatever the watchlist needs that
-    isn't current, kept every month.
+    Baseline = what you pay for now, kept every month. Conservative on purpose:
+    it doesn't assume you'd otherwise add every service the watchlist needs and
+    keep it forever. Services the plan adds are returned for display only.
     """
     current = [n for n, s in services.items() if s["current"]]
     added = [n for n in need if not services[n]["current"]]
-    baseline = sum(services[n]["price"] for n in current + added)
+    baseline = sum(services[n]["price"] for n in current)
     average = sum(sum(m.values()) for m in months) / len(months)
     return baseline, average, added
 
@@ -253,6 +272,7 @@ def main():
 
     services, titles = load(args.services, args.watchlist)
 
+    included, titles = split_included(titles)
     free, titles = split_free(titles)
 
     uncovered = [t["title"] for t in titles if not t["services"]]
@@ -286,6 +306,11 @@ def main():
             by = f" by {cancel:%b %d}" if cancel else ""
             print(f"  {t:<40} {s}{by}  (or free: {', '.join(free_on[t])})")
 
+    if included:
+        print("\nIncluded with a membership you have")
+        for t in included:
+            print(f"  {t['title']:<40} {', '.join(t['included'])}")
+
     if free_only:
         print("\nFree — no subscription needed")
         for t in free_only:
@@ -306,9 +331,10 @@ def main():
     baseline, average, added = savings(services, need, months)
     planned = average * len(months)
     current = [n for n, s in services.items() if s["current"]]
-    kept = ", ".join(current) + (f", + {', '.join(added)}" if added else "")
-    print(f"\nWithout rotation ({kept}):  ${baseline:.2f}/mo")
+    print(f"\nWithout rotation (keep {', '.join(current)}):  ${baseline:.2f}/mo")
     print(f"With rotation: ${planned:.2f} over {len(months)} months =  ${average:.2f}/mo")
+    if added:
+        print(f"  (the rotation also covers {', '.join(added)}, which you don't pay for now)")
     print(f"Estimated savings:  ${baseline - average:.2f}/mo  (≈ ${(baseline - average) * 12:.0f}/yr)")
 
 

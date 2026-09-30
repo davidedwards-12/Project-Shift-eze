@@ -147,8 +147,21 @@ class Planning(unittest.TestCase):
         (b1, total1, added1), (b2, total2, added2) = results
         self.assertEqual(b1, b2)            # same baseline
         self.assertEqual(total1, total2)    # same total spend, just spread differently
-        self.assertEqual(added1, ["Prime Video"])  # baseline includes needed non-current services
-        self.assertAlmostEqual(b1, 24.99 + 15.99 + 8.99)
+        self.assertEqual(added1, ["Prime Video"])  # reported, but...
+        self.assertAlmostEqual(b1, 24.99 + 15.99)  # ...baseline is current services only
+
+    def test_prime_members_get_prime_titles_included(self):
+        services = self.SERVICES[:3] + [dict(self.SERVICES[3], included_with="amazon_prime")]
+        _, titles = rotate.prepare(services, self.TITLES, {"amazon_prime": True})
+        included, rest = rotate.split_included(titles)
+        self.assertEqual([t["title"] for t in included], ["Reacher"])
+        self.assertNotIn("Reacher", [t["title"] for t in rest])
+
+    def test_non_members_still_pay_for_prime_video(self):
+        services = self.SERVICES[:3] + [dict(self.SERVICES[3], included_with="amazon_prime")]
+        _, titles = rotate.prepare(services, self.TITLES, {"amazon_prime": False})
+        included, _ = rotate.split_included(titles)
+        self.assertEqual(included, [])
 
 
 class FreeTitlePlacement(unittest.TestCase):
