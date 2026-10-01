@@ -10,6 +10,14 @@ You give it your watchlist and a monthly budget. It works out which services you
 
 This is a subscription **optimizer**, not just a subscription tracker.
 
+## Early build
+
+A first working version of the iOS app, with sample data. The look is a placeholder until the product is named.
+
+| Plan | Upcoming actions | Services | Watchlist |
+| --- | --- | --- | --- |
+| <img src="docs/screenshots/plan.png" width="200" alt="Plan: projected savings, budget and the services for each month"> | <img src="docs/screenshots/actions.png" width="200" alt="Upcoming actions: dated keep, cancel and restart steps"> | <img src="docs/screenshots/services.png" width="200" alt="Services: current subscriptions with price, renewal day and who bills them"> | <img src="docs/screenshots/watchlist.png" width="200" alt="Watchlist: titles in priority order and where each streams"> |
+
 ## How it works
 
 ```
@@ -87,4 +95,4 @@ Rotation modes (Cheapest, Watchlist, Sports, Family, Binge, Never Pay Unused), h
 
 ## Status
 
-Prototypes done (`spikes/`: TMDB lookup, rotation engine, management links, tests). Next: the iOS app.
+Prototypes done (`spikes/`). The iOS app is in progress (`ios/`): a Swift planning engine with tests and a first version of the Plan, Services and Watchlist screens. Next: TMDB search and saving data on the phone.
