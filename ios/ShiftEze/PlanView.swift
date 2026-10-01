@@ -17,6 +17,16 @@ struct PlanView: View {
                     }
                 }
                 switch model.plan {
+                case .success(let plan) where plan.months.isEmpty:
+                    // No paid months: savings would just be everything you pay
+                    // now, so don't show a number.
+                    EmptyPlanSection(watchlistIsEmpty: model.watchlist.isEmpty)
+                    BudgetSection(budget: $model.budget)
+                    if !model.watchlist.isEmpty {
+                        // Everything is free or included: cancelling is real advice.
+                        ActionsSection(actions: plan.actions)
+                    }
+                    ElsewhereSection(plan: plan, hasAmazonPrime: model.hasAmazonPrime)
                 case .success(let plan):
                     SavingsSection(savings: plan.savings)
                     BudgetSection(budget: $model.budget)
@@ -37,6 +47,28 @@ struct PlanView: View {
                 }
             }
             .navigationTitle("Your plan")
+        }
+    }
+}
+
+private struct EmptyPlanSection: View {
+    let watchlistIsEmpty: Bool
+
+    var body: some View {
+        Section {
+            if watchlistIsEmpty {
+                ContentUnavailableView(
+                    "No plan yet",
+                    systemImage: "list.bullet",
+                    description: Text("Add movies and shows on the Watchlist tab and we'll plan which services you need.")
+                )
+            } else {
+                ContentUnavailableView(
+                    "Nothing to pay for",
+                    systemImage: "checkmark.seal",
+                    description: Text("Everything on your watchlist is free or included with a membership.")
+                )
+            }
         }
     }
 }

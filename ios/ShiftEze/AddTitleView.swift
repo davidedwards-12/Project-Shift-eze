@@ -2,11 +2,31 @@ import RotationEngine
 import SwiftUI
 import TMDB
 
-/// Search TMDB and add movies and shows to the watchlist. Stays open so
-/// several titles can be added in a row; tapping a checked title removes it.
+/// The + sheet on the Watchlist tab. Stays open so several titles can be
+/// added in a row.
 struct AddTitleView: View {
-    @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            TitleSearchView()
+                .navigationTitle("Add a title")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { dismiss() }
+                    }
+                }
+        }
+    }
+}
+
+/// Search TMDB and add movies and shows to the watchlist; tapping a checked
+/// title removes it again. Used by the + sheet and by onboarding.
+struct TitleSearchView: View {
+    @Environment(AppModel.self) private var model
+    /// Put the cursor in the search field straight away.
+    var autoFocus = true
 
     @State private var query = ""
     @State private var results: [SearchResult] = []
@@ -24,42 +44,33 @@ struct AddTitleView: View {
     private let client = AppConfig.tmdbClient
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if client == nil {
-                    ContentUnavailableView(
-                        "TMDB key not set",
-                        systemImage: "key",
-                        description: Text("Add TMDB_API_KEY to ios/Secrets.xcconfig to search.")
-                    )
-                } else {
-                    resultsList
-                }
+        Group {
+            if client == nil {
+                ContentUnavailableView(
+                    "TMDB key not set",
+                    systemImage: "key",
+                    description: Text("Add TMDB_API_KEY to ios/Secrets.xcconfig to search.")
+                )
+            } else {
+                resultsList
             }
-            .navigationTitle("Add a title")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
+        }
+        // A plain field rather than .searchable: the system search bar
+        // hides the title and Done while it's active, which looked like a
+        // second sheet opening.
+        .safeAreaInset(edge: .top) {
+            if client != nil {
+                SearchField(text: $query, focused: $searchFocused)
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
             }
-            // A plain field rather than .searchable: the system search bar
-            // hides the title and Done while it's active, which looked like a
-            // second sheet opening.
-            .safeAreaInset(edge: .top) {
-                if client != nil {
-                    SearchField(text: $query, focused: $searchFocused)
-                        .padding(.horizontal)
-                        .padding(.bottom, 8)
-                }
-            }
-            .onAppear { searchFocused = client != nil }
-            .task(id: query) { await search() }
-            .alert("Couldn't add it", isPresented: .constant(addError != nil)) {
-                Button("OK") { addError = nil }
-            } message: {
-                Text(addError ?? "")
-            }
+        }
+        .onAppear { searchFocused = autoFocus && client != nil }
+        .task(id: query) { await search() }
+        .alert("Couldn't add it", isPresented: .constant(addError != nil)) {
+            Button("OK") { addError = nil }
+        } message: {
+            Text(addError ?? "")
         }
     }
 
@@ -93,6 +104,7 @@ struct AddTitleView: View {
                 }
             }
         }
+        .scrollDismissesKeyboard(.immediately)
     }
 
     private func search() async {

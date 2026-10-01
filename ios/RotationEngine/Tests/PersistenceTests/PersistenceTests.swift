@@ -50,6 +50,31 @@ let sampleState = SavedState(
     }
 }
 
+@Suite struct Onboarding {
+    @Test func filesSavedBeforeOnboardingCountAsDone() throws {
+        let store = tempStore()
+        try store.save(sampleState)
+        // Strip the flag to mimic a file written by an older version.
+        var json = try JSONSerialization.jsonObject(with: Data(contentsOf: store.url)) as! [String: Any]
+        json.removeValue(forKey: "hasCompletedOnboarding")
+        try JSONSerialization.data(withJSONObject: json).write(to: store.url)
+
+        guard case .loaded(let state) = store.load() else {
+            Issue.record("expected .loaded")
+            return
+        }
+        #expect(state.hasCompletedOnboarding)
+    }
+
+    @Test func notOnboardedIsSavedAndLoaded() throws {
+        var state = sampleState
+        state.hasCompletedOnboarding = false
+        let store = tempStore()
+        try store.save(state)
+        #expect(store.load() == .loaded(state))
+    }
+}
+
 @Suite struct Sanitizing {
     @Test func badValuesAreFixed() {
         var state = sampleState

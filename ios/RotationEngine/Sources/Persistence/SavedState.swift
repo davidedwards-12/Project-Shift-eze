@@ -11,12 +11,36 @@ public struct SavedState: Codable, Equatable, Sendable {
     public var watchlist: [WatchlistEntry]
     public var hasAmazonPrime: Bool
     public var budget: Cents
+    /// False until the user finishes or skips first-launch setup.
+    public var hasCompletedOnboarding: Bool
 
-    public init(services: [Service], watchlist: [WatchlistEntry], hasAmazonPrime: Bool, budget: Cents) {
+    public init(
+        services: [Service],
+        watchlist: [WatchlistEntry],
+        hasAmazonPrime: Bool,
+        budget: Cents,
+        hasCompletedOnboarding: Bool = true
+    ) {
         self.services = services
         self.watchlist = watchlist
         self.hasAmazonPrime = hasAmazonPrime
         self.budget = budget
+        self.hasCompletedOnboarding = hasCompletedOnboarding
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case version, services, watchlist, hasAmazonPrime, budget, hasCompletedOnboarding
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        version = try c.decodeIfPresent(Int.self, forKey: .version) ?? Self.currentVersion
+        services = try c.decode([Service].self, forKey: .services)
+        watchlist = try c.decode([WatchlistEntry].self, forKey: .watchlist)
+        hasAmazonPrime = try c.decode(Bool.self, forKey: .hasAmazonPrime)
+        budget = try c.decode(Cents.self, forKey: .budget)
+        // Saved before onboarding existed: that user is already set up.
+        hasCompletedOnboarding = try c.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding) ?? true
     }
 
     /// Fix values that would break planning or the screens: negative prices,

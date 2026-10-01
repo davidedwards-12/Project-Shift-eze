@@ -12,6 +12,8 @@ final class AppModel {
     var watchlist: [WatchlistEntry] { didSet { save() } }
     var hasAmazonPrime: Bool { didSet { save() } }
     var budget: Cents { didSet { save() } }
+    /// False until first-launch setup is finished or skipped.
+    var hasCompletedOnboarding: Bool { didSet { save() } }
 
     /// Shown once when saved data couldn't be read or written.
     var storageNotice: String?
@@ -24,21 +26,23 @@ final class AppModel {
         watchlist = state.watchlist
         hasAmazonPrime = state.hasAmazonPrime
         budget = state.budget
+        hasCompletedOnboarding = state.hasCompletedOnboarding
         self.store = store
     }
 
-    /// Load saved data; sample data on first launch or if the file is damaged.
+    /// Load saved data. First launch, or a damaged file, starts empty and
+    /// goes through onboarding.
     static func launch(store: Store = Store()) -> AppModel {
         switch store.load() {
         case .loaded(let state):
             return AppModel(state: state, store: store)
         case .empty:
-            let model = AppModel(state: .sample, store: store)
+            let model = AppModel(state: .newUser, store: store)
             model.save()
             return model
         case .damaged:
-            let model = AppModel(state: .sample, store: store)
-            model.storageNotice = "Your saved data couldn't be read, so the app started over with sample data. A copy of the old file was kept."
+            let model = AppModel(state: .newUser, store: store)
+            model.storageNotice = "Your saved data couldn't be read, so the app started over. A copy of the old file was kept."
             model.save()
             return model
         }
@@ -53,10 +57,17 @@ final class AppModel {
         watchlist = sample.watchlist
         hasAmazonPrime = sample.hasAmazonPrime
         budget = sample.budget
+        hasCompletedOnboarding = true
+    }
+
+    /// For testing: show first-launch setup again, keeping current data.
+    func restartOnboarding() {
+        hasCompletedOnboarding = false
     }
 
     private var state: SavedState {
-        SavedState(services: services, watchlist: watchlist, hasAmazonPrime: hasAmazonPrime, budget: budget)
+        SavedState(services: services, watchlist: watchlist, hasAmazonPrime: hasAmazonPrime,
+                   budget: budget, hasCompletedOnboarding: hasCompletedOnboarding)
     }
 
     private func save() {
@@ -94,6 +105,24 @@ final class AppModel {
 }
 
 extension SavedState {
+    /// A new user: every service we know, none subscribed, an empty
+    /// watchlist, and onboarding still to do.
+    static var newUser: SavedState {
+        var state = sample
+        state.services = state.services.map { service in
+            var s = service
+            s.current = false
+            s.renews = nil
+            s.billedThrough = nil
+            return s
+        }
+        state.watchlist = []
+        state.hasAmazonPrime = false
+        state.budget = 40_00
+        state.hasCompletedOnboarding = false
+        return state
+    }
+
     /// The sample subscriptions and watchlist bundled with the app.
     static var sample: SavedState {
         let config = SampleData.load("services", as: ServicesFile.self)
