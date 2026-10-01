@@ -4,6 +4,7 @@ import SwiftUI
 /// The user's subscriptions: what they pay for now, when it renews, who bills it.
 struct ServicesView: View {
     @Environment(AppModel.self) private var model
+    @State private var confirmReset = false
 
     var body: some View {
         @Bindable var model = model
@@ -20,6 +21,20 @@ struct ServicesView: View {
                 serviceSection("Not subscribed", current: false)
             }
             .navigationTitle("Services")
+            .toolbar {
+                Menu {
+                    Button("Reset to sample data", systemImage: "arrow.counterclockwise", role: .destructive) {
+                        confirmReset = true
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+            }
+            .confirmationDialog("Reset to sample data?", isPresented: $confirmReset, titleVisibility: .visible) {
+                Button("Reset", role: .destructive) { model.resetToSample() }
+            } message: {
+                Text("Your subscriptions, watchlist and budget will be replaced with the sample data.")
+            }
         }
     }
 

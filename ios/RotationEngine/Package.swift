@@ -7,6 +7,7 @@ let package = Package(
     platforms: [.iOS(.v26), .macOS(.v14)],  // macOS only for running tests
     products: [
         .library(name: "RotationEngine", targets: ["RotationEngine"]),
+        .library(name: "Persistence", targets: ["Persistence"]),
     ],
     targets: [
         .target(
@@ -18,5 +19,7 @@ let package = Package(
             dependencies: ["RotationEngine"],
             resources: [.copy("Fixtures")]
         ),
+        .target(name: "Persistence", dependencies: ["RotationEngine"]),
+        .testTarget(name: "PersistenceTests", dependencies: ["Persistence"]),
     ]
 )

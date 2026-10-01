@@ -1,6 +1,7 @@
 // Ported from spikes/rotation/test_rotate.py. These pin down the planning
 // rules; keep both in step until the Python spike is retired.
 
+import Foundation
 import Testing
 @testable import RotationEngine
 
@@ -163,7 +164,7 @@ func line(_ date: CalendarDate, _ title: String) -> String { "\(date) \(title)" 
     ])
 
     func free(_ name: String, _ on: String...) -> Title {
-        Title(name: name, services: on, free: ["Tubi TV"], library: [], included: [], months: 1)
+        Title(id: name, name: name, services: on, free: ["Tubi TV"], library: [], included: [], months: 1)
     }
 
     @Test func freeTitleOnAPlannedServiceGoesInThatMonth() {
@@ -269,5 +270,28 @@ func line(_ date: CalendarDate, _ title: String) -> String { "\(date) \(title)" 
         ], budget: 4000, start: start, today: today)
         #expect(plan.titles(in: 0, on: "Netflix").map(\.name) == ["Stranger Things", "Fighting Spirit"])
         #expect(plan.titles(in: 0, on: "Netflix").map(\.alsoFree) == [false, true])
+    }
+}
+
+@Suite struct TitleIdentity {
+    @Test func titlesWithTheSameNameArePlannedSeparately() throws {
+        let plan = try RotationPlan.make(services: PlanningRules.services, watchlist: [
+            WatchlistEntry(id: "wotw-2005", title: "War of the Worlds", services: ["Netflix"]),
+            WatchlistEntry(id: "wotw-1953", title: "War of the Worlds", services: ["Hulu"]),
+        ], budget: 6000, start: start, today: today)
+        #expect(plan.cover.assignment == ["wotw-2005": "Netflix", "wotw-1953": "Hulu"])
+        #expect(plan.title(id: "wotw-1953")?.services == ["Hulu"])
+    }
+
+    @Test func entriesSavedWithoutAnIdUseTheTitle() throws {
+        let json = #"{"title": "Andor", "services": ["Disney Plus"]}"#
+        let entry = try JSONDecoder().decode(WatchlistEntry.self, from: Data(json.utf8))
+        #expect(entry.id == "Andor")
+    }
+
+    @Test func idsRoundTripThroughJSON() throws {
+        let entry = WatchlistEntry(id: "abc", title: "Andor", services: ["Disney Plus"], months: 2)
+        let decoded = try JSONDecoder().decode(WatchlistEntry.self, from: JSONEncoder().encode(entry))
+        #expect(decoded == entry)
     }
 }

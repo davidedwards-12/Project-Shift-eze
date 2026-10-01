@@ -9,6 +9,13 @@ struct PlanView: View {
         @Bindable var model = model
         NavigationStack {
             List {
+                if let notice = model.storageNotice {
+                    Section {
+                        Label(notice, systemImage: "exclamationmark.triangle")
+                            .font(.subheadline)
+                        Button("OK") { model.storageNotice = nil }
+                    }
+                }
                 switch model.plan {
                 case .success(let plan):
                     SavingsSection(savings: plan.savings)
@@ -91,7 +98,7 @@ private struct MonthSection: View {
                         Spacer()
                         Text(month.prices[service]!.money).monospacedDigit()
                     }
-                    ForEach(plan.titles(in: index, on: service), id: \.name) { title in
+                    ForEach(plan.titles(in: index, on: service), id: \.id) { title in
                         HStack(spacing: 4) {
                             Text(title.name)
                             if title.alsoFree {
@@ -175,30 +182,30 @@ private struct ElsewhereSection: View {
     var body: some View {
         if !plan.included.isEmpty {
             Section(hasAmazonPrime ? "Included with Amazon Prime" : "Included with a membership") {
-                ForEach(plan.included, id: \.name) { TitleRow(name: $0.name, detail: $0.included.formatted()) }
+                ForEach(plan.included, id: \.id) { TitleRow(name: $0.name, detail: $0.included.formatted()) }
             }
         }
         let placement = plan.freePlacement
         if !placement.onCurrent.isEmpty || !placement.freeOnly.isEmpty {
             Section("Free") {
-                ForEach(placement.onCurrent.sorted(by: { $0.key < $1.key }), id: \.key) { title, service in
-                    TitleRow(name: title, detail: "On \(service), which you pay for now: watch before you cancel it")
+                ForEach(placement.onCurrent.sorted(by: { $0.key < $1.key }), id: \.key) { id, service in
+                    TitleRow(name: plan.title(id: id)?.name ?? id, detail: "On \(service), which you pay for now: watch before you cancel it")
                 }
-                ForEach(plan.free.filter { placement.freeOnly.contains($0.name) }, id: \.name) {
+                ForEach(plan.free.filter { placement.freeOnly.contains($0.id) }, id: \.id) {
                     TitleRow(name: $0.name, detail: $0.free.formatted())
                 }
             }
         }
         if !plan.library.isEmpty {
             Section {
-                ForEach(plan.library, id: \.name) { TitleRow(name: $0.name, detail: $0.library.formatted()) }
+                ForEach(plan.library, id: \.id) { TitleRow(name: $0.name, detail: $0.library.formatted()) }
             } header: {
                 Text("Also free with a library card")
             }
         }
         if !plan.unavailable.isEmpty {
             Section("Not on a tracked service") {
-                ForEach(plan.unavailable, id: \.name) { TitleRow(name: $0.name, detail: "Not streaming anywhere we track right now") }
+                ForEach(plan.unavailable, id: \.id) { TitleRow(name: $0.name, detail: "Not streaming anywhere we track right now") }
             }
         }
     }

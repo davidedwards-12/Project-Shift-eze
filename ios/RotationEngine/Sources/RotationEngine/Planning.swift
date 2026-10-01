@@ -33,6 +33,7 @@ public enum Planning {
             let on = Set(entry.services.compactMap { lookup[$0.lowercased()] }).sorted()
             let free = entry.free ?? []
             return Title(
+                id: entry.id,
                 name: entry.title,
                 services: on,
                 free: free.filter { trustedFree.contains($0.lowercased()) },
@@ -57,7 +58,7 @@ public enum Planning {
     /// The chosen services and which one each title is watched on.
     public struct Cover: Sendable {
         public var cost: Cents
-        /// Title name → service it's watched on.
+        /// Title id → service it's watched on.
         public var assignment: [String: String]
         /// Service → months it must stay active, for services in `services`.
         public var need: [String: Int]
@@ -114,11 +115,11 @@ public enum Planning {
             public var service: String
         }
 
-        /// Earliest planned month with a service that carries it.
+        /// Title id → earliest planned month with a service that carries it.
         public var inPlan: [String: Spot] = [:]
-        /// A service you pay for now but the plan drops.
+        /// Title id → a service you pay for now but the plan drops.
         public var onCurrent: [String: String] = [:]
-        /// No paid option you'll have; watch it free.
+        /// Title ids with no paid option you'll have; watch them free.
         public var freeOnly: [String] = []
     }
 
@@ -131,11 +132,11 @@ public enum Planning {
                 t.services.first(where: { months[i].contains($0) }).map { FreePlacement.Spot(month: i, service: $0) }
             }.first
             if let spot {
-                result.inPlan[t.name] = spot
+                result.inPlan[t.id] = spot
             } else if let current = t.services.first(where: { catalog[$0].current }) {
-                result.onCurrent[t.name] = current
+                result.onCurrent[t.id] = current
             } else {
-                result.freeOnly.append(t.name)
+                result.freeOnly.append(t.id)
             }
         }
         return result
@@ -150,7 +151,7 @@ public enum Planning {
         for t in titles {
             let options = t.services.filter { chosen.contains($0) }
             guard let cheapest = options.min(by: { catalog[$0].price < catalog[$1].price }) else { return nil }
-            out[t.name] = cheapest
+            out[t.id] = cheapest
         }
         return out
     }
@@ -161,7 +162,7 @@ public enum Planning {
         var need: [String: Int] = [:]
         var order: [String] = []
         for t in titles {
-            let s = assignment[t.name]!
+            let s = assignment[t.id]!
             if need[s] == nil { order.append(s) }
             need[s] = max(need[s] ?? 0, t.months)
         }
