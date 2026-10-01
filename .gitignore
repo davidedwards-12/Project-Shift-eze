@@ -1,5 +1,6 @@
 # Local secrets — never commit
 .env
+ios/Secrets.xcconfig
 
 # macOS
 .DS_Store

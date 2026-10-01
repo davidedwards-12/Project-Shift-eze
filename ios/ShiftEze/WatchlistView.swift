@@ -4,6 +4,7 @@ import SwiftUI
 /// What the user wants to watch, in priority order, and where each title streams.
 struct WatchlistView: View {
     @Environment(AppModel.self) private var model
+    @State private var addingTitle = false
 
     var body: some View {
         @Bindable var model = model
@@ -17,11 +18,17 @@ struct WatchlistView: View {
                     .onDelete { model.watchlist.remove(atOffsets: $0) }
                     .onMove { model.watchlist.move(fromOffsets: $0, toOffset: $1) }
                 } footer: {
-                    Text("Higher in the list is planned sooner. Tap Edit to reorder or remove.")
+                    Text("Higher in the list is planned sooner. New titles go at the bottom; tap Edit to reorder or remove.")
                 }
             }
             .navigationTitle("Watchlist")
-            .toolbar { EditButton() }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) { EditButton() }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Add", systemImage: "plus") { addingTitle = true }
+                }
+            }
+            .sheet(isPresented: $addingTitle) { AddTitleView() }
         }
     }
 }

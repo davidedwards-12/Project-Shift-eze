@@ -46,6 +46,15 @@ to `state.damaged.json` and the app starts over with a notice. Watchlist
 entries have an `id` (defaulting to the title for older data); plans are
 keyed by it, not the title.
 
+TMDB search (Watchlist → +) uses the package's `TMDB` target (tested with a
+stubbed network). Added titles get ids like `tmdb:tv:136315`. The key comes
+from `ios/Secrets.xcconfig` (gitignored; copy `Secrets.example.xcconfig`),
+included by `ios/Config.xcconfig` and passed through `ios/Info.plist` as
+`TMDBAPIKey`; `AppConfig.tmdbToken` reads it. Without it the app builds and
+search says the key isn't set. **Development only**: a key in the app can be
+extracted, so TMDB calls must move to a server before anyone else gets the
+app. Search results must keep the TMDB and JustWatch credit.
+
 App colors come from `ShiftEze/Theme.swift`: roles like `Theme.accent`,
 `Theme.background` and `Theme.gradient`, with values from `docs/BRAND.md`.
 Don't use raw hex in views. Screens don't use the theme yet; that's the
