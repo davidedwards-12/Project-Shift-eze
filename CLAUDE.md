@@ -36,8 +36,14 @@ swift test --package-path ios/RotationEngine
 the local package; the `ShiftEze/` folder is synced, so new files are picked
 up without editing the project. Tabs: Plan, Services, Watchlist. `AppModel`
 holds subscriptions, watchlist and budget in memory (loaded from
-`ShiftEze/SampleData/`) and recomputes `RotationPlan` on every read. The
-display name is a placeholder ("Rotation") and the bundle ID is
+`ShiftEze/SampleData/`) and recomputes `RotationPlan` on every read.
+
+App colors come from `ShiftEze/Theme.swift`: roles like `Theme.accent`,
+`Theme.background` and `Theme.gradient`, with values from `docs/BRAND.md`.
+Don't use raw hex in views. Screens don't use the theme yet; that's the
+design pass.
+
+The display name is a placeholder ("Rotation") and the bundle ID is
 `com.example.rotation` until the product name is chosen; the codename must not
 become the display name.
 
