@@ -26,10 +26,24 @@ iOS first in SwiftUI (iOS 26+), Android later. Prototype findings are in
 `ios/RotationEngine/` is a Swift package with the planning logic (no UI):
 which services cover the watchlist, the month-by-month schedule, dated
 cancel/restart actions, management links and savings. Prices are whole cents;
-dates are `CalendarDate` (no times or time zones). The app will depend on it.
+dates are `CalendarDate` (no times or time zones).
 
 ```bash
 swift test --package-path ios/RotationEngine
+```
+
+`ios/ShiftEze.xcodeproj` is the SwiftUI app (iOS 26, iPhone). It depends on
+the local package; the `ShiftEze/` folder is synced, so new files are picked
+up without editing the project. Tabs: Plan, Services, Watchlist. `AppModel`
+holds subscriptions, watchlist and budget in memory (loaded from
+`ShiftEze/SampleData/`) and recomputes `RotationPlan` on every read. The
+display name is a placeholder ("Rotation") and the bundle ID is
+`com.example.rotation` until the product name is chosen; the codename must not
+become the display name.
+
+```bash
+xcodebuild build -project ios/ShiftEze.xcodeproj -scheme ShiftEze \
+  -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
 ```
 
 `ParityTests` checks the Swift engine plans exactly like the Python spike on
