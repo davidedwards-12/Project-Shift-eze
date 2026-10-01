@@ -7,12 +7,12 @@ struct WatchlistView: View {
 
     var body: some View {
         @Bindable var model = model
-        let titles = Dictionary(model.titles.map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })
+        let titles = Dictionary(model.titles.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         NavigationStack {
             List {
                 Section {
-                    ForEach(model.watchlist, id: \.title) { entry in
-                        WatchlistRow(title: titles[entry.title])
+                    ForEach(model.watchlist, id: \.id) { entry in
+                        WatchlistRow(title: titles[entry.id])
                     }
                     .onDelete { model.watchlist.remove(atOffsets: $0) }
                     .onMove { model.watchlist.move(fromOffsets: $0, toOffset: $1) }

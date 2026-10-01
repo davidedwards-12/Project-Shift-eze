@@ -69,12 +69,18 @@ public struct RotationPlan: Sendable {
     /// First day of month `index` of the plan.
     public func date(ofMonth index: Int) -> CalendarDate { start.onDay(1, monthsLater: index) }
 
+    /// A watchlist title by id, from any section of the plan.
+    public func title(id: String) -> Title? {
+        (paid + included + free + unavailable).first { $0.id == id }
+    }
+
     /// Titles watched on `service` in month `index`: the ones it's paid for,
     /// then free titles placed there (`alsoFree` true).
-    public func titles(in index: Int, on service: String) -> [(name: String, alsoFree: Bool)] {
-        let paidHere = paid.filter { cover.assignment[$0.name] == service }.map { ($0.name, false) }
-        let freeHere = free.filter { freePlacement.inPlan[$0.name] == .init(month: index, service: service) }
-            .map { ($0.name, true) }
-        return (paidHere + freeHere).map { (name: $0.0, alsoFree: $0.1) }
+    public func titles(in index: Int, on service: String) -> [(id: String, name: String, alsoFree: Bool)] {
+        let paidHere = paid.filter { cover.assignment[$0.id] == service }
+            .map { (id: $0.id, name: $0.name, alsoFree: false) }
+        let freeHere = free.filter { freePlacement.inPlan[$0.id] == .init(month: index, service: service) }
+            .map { (id: $0.id, name: $0.name, alsoFree: true) }
+        return paidHere + freeHere
     }
 }

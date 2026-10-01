@@ -35,8 +35,16 @@ swift test --package-path ios/RotationEngine
 `ios/ShiftEze.xcodeproj` is the SwiftUI app (iOS 26, iPhone). It depends on
 the local package; the `ShiftEze/` folder is synced, so new files are picked
 up without editing the project. Tabs: Plan, Services, Watchlist. `AppModel`
-holds subscriptions, watchlist and budget in memory (loaded from
-`ShiftEze/SampleData/`) and recomputes `RotationPlan` on every read.
+holds subscriptions, watchlist, budget and the Prime setting, saves on every
+change, and recomputes `RotationPlan` on every read.
+
+Saving lives in the package's `Persistence` target (tested by `swift test`):
+`SavedState` is written as JSON to Application Support/`state.json` with iOS
+file protection. First launch starts from `ShiftEze/SampleData/`. Out-of-range
+values are fixed on load (`sanitized()`); a file that can't be read is moved
+to `state.damaged.json` and the app starts over with a notice. Watchlist
+entries have an `id` (defaulting to the title for older data); plans are
+keyed by it, not the title.
 
 App colors come from `ShiftEze/Theme.swift`: roles like `Theme.accent`,
 `Theme.background` and `Theme.gradient`, with values from `docs/BRAND.md`.

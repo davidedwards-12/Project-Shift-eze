@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		A10000000000000000000001 /* RotationEngine in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000090 /* RotationEngine */; };
+		A10000000000000000000002 /* Persistence in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000091 /* Persistence */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +29,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000001 /* RotationEngine in Frameworks */,
+				A10000000000000000000002 /* Persistence in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,6 +73,7 @@
 			name = ShiftEze;
 			packageProductDependencies = (
 				A10000000000000000000090 /* RotationEngine */,
+				A10000000000000000000091 /* Persistence */,
 			);
 			productName = ShiftEze;
 			productReference = A10000000000000000000010 /* ShiftEze.app */;
@@ -266,6 +269,10 @@
 		A10000000000000000000090 /* RotationEngine */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = RotationEngine;
+		};
+		A10000000000000000000091 /* Persistence */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Persistence;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

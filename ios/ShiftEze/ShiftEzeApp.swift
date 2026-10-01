@@ -2,7 +2,7 @@ import SwiftUI
 
 @main
 struct ShiftEzeApp: App {
-    @State private var model = AppModel.sample()
+    @State private var model = AppModel.launch()
 
     var body: some Scene {
         WindowGroup {

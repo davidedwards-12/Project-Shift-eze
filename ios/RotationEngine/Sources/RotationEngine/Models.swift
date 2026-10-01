@@ -69,13 +69,17 @@ extension Service: Codable {
 }
 
 /// A watchlist line as it comes from TMDB: provider names are raw.
-public struct WatchlistEntry: Codable, Hashable, Sendable {
+public struct WatchlistEntry: Hashable, Sendable {
+    /// Stable identity, so two titles with the same name don't clash.
+    /// Defaults to the title for data saved before IDs existed.
+    public var id: String
     public var title: String
     public var services: [String]
     public var free: [String]?
     public var months: Int?
 
-    public init(title: String, services: [String], free: [String]? = nil, months: Int? = nil) {
+    public init(id: String? = nil, title: String, services: [String], free: [String]? = nil, months: Int? = nil) {
+        self.id = id ?? title
         self.title = title
         self.services = services
         self.free = free
@@ -83,8 +87,23 @@ public struct WatchlistEntry: Codable, Hashable, Sendable {
     }
 }
 
+extension WatchlistEntry: Codable {
+    enum CodingKeys: String, CodingKey { case id, title, services, free, months }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        title = try c.decode(String.self, forKey: .title)
+        id = try c.decodeIfPresent(String.self, forKey: .id) ?? title
+        services = try c.decodeIfPresent([String].self, forKey: .services) ?? []
+        free = try c.decodeIfPresent([String].self, forKey: .free)
+        months = try c.decodeIfPresent(Int.self, forKey: .months)
+    }
+}
+
 /// A watchlist title after provider names are normalized to services.
 public struct Title: Hashable, Sendable {
+    /// The watchlist entry's id; plans are keyed by this, not the name.
+    public var id: String
     public var name: String
     /// Tracked paid services that carry it, sorted by name.
     public var services: [String]
