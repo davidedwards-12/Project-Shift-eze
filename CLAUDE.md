@@ -110,3 +110,18 @@ planning rules as the Swift tests.
 - App code exists now: one branch per change and a PR into `main`. Don't
   commit app code straight to `main`.
 - Short, imperative commit subjects describing what changed.
+
+## Labels
+
+Every new issue and PR gets one type label and at least one area label, plus
+any flags that apply.
+
+- **Type** (GitHub defaults): `enhancement`, `bug`, `documentation`,
+  `question`; `chore` for CI, tooling and cleanup with no user-facing change.
+- **Area**: `area: engine` (planning, savings, actions), `area: app` (iOS
+  screens and behavior), `area: data` (TMDB, availability, management links),
+  `area: backend` (server-side), `area: design` (name, logo, colors, polish).
+- **Flags**: `launch blocker` (must be done before anyone outside the team
+  uses the app), `decision` (needs a product call from Dave and the partner),
+  `security` (needs the partner's security review; anything touching keys,
+  stored user data or network calls).
