@@ -8,6 +8,7 @@ let package = Package(
     products: [
         .library(name: "RotationEngine", targets: ["RotationEngine"]),
         .library(name: "Persistence", targets: ["Persistence"]),
+        .library(name: "TMDB", targets: ["TMDB"]),
     ],
     targets: [
         .target(
@@ -21,5 +22,7 @@ let package = Package(
         ),
         .target(name: "Persistence", dependencies: ["RotationEngine"]),
         .testTarget(name: "PersistenceTests", dependencies: ["Persistence"]),
+        .target(name: "TMDB", dependencies: ["RotationEngine"]),
+        .testTarget(name: "TMDBTests", dependencies: ["TMDB"]),
     ]
 )

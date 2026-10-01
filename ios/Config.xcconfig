@@ -1,0 +1,12 @@
+// Build settings shared by every configuration.
+//
+// TMDB_API_KEY comes from Secrets.xcconfig, which is gitignored. To set it up,
+// copy Secrets.example.xcconfig to Secrets.xcconfig and paste in TMDB's
+// "API Read Access Token". Without it the app still builds; search just says
+// the key isn't set.
+//
+// Development only: a key built into the app can be extracted from it. Before
+// the app goes to anyone else, TMDB calls move to a server that holds the key.
+
+TMDB_API_KEY =
+#include? "Secrets.xcconfig"
