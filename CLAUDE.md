@@ -46,6 +46,15 @@ to `state.damaged.json` and the app starts over with a notice. Watchlist
 entries have an `id` (defaulting to the title for older data); plans are
 keyed by it, not the title.
 
+First launch shows `OnboardingView` (welcome → subscriptions → watchlist →
+budget) over the app until `hasCompletedOnboarding` is set; every step can be
+skipped. New installs start from `SavedState.newUser` (all services
+unsubscribed, empty watchlist); saved files from before the flag existed count
+as onboarded. Services → ⋯ has "Start onboarding again" and "Reset to sample
+data" for testing. With no paid months, the Plan tab shows an empty state
+instead of savings. Shared pieces: `TitleSearchView` (used by the + sheet and
+onboarding), `PriceField` and `BillingFields` (service editor and onboarding).
+
 TMDB search (Watchlist → +) uses the package's `TMDB` target (tested with a
 stubbed network). Added titles get ids like `tmdb:tv:136315`. The key comes
 from `ios/Secrets.xcconfig` (gitignored; copy `Secrets.example.xcconfig`),

@@ -23,6 +23,9 @@ struct ServicesView: View {
             .navigationTitle("Services")
             .toolbar {
                 Menu {
+                    Button("Start onboarding again", systemImage: "sparkles") {
+                        model.restartOnboarding()
+                    }
                     Button("Reset to sample data", systemImage: "arrow.counterclockwise", role: .destructive) {
                         confirmReset = true
                     }
@@ -39,8 +42,12 @@ struct ServicesView: View {
     }
 
     private func serviceSection(_ title: String, current: Bool) -> some View {
-        Section(title) {
-            ForEach(model.services.indices.filter { model.services[$0].current == current }, id: \.self) { index in
+        let indices = model.services.indices.filter { model.services[$0].current == current }
+        return Section(title) {
+            if indices.isEmpty {
+                Text("None yet").foregroundStyle(.secondary)
+            }
+            ForEach(indices, id: \.self) { index in
                 NavigationLink {
                     ServiceDetailView(index: index)
                 } label: {
@@ -80,55 +87,75 @@ struct ServiceDetailView: View {
     @Environment(AppModel.self) private var model
     let index: Int
 
-    /// "Directly" plus every billing provider we have management links for.
-    private var billers: [String] {
-        ManagementLinks.bundled.billers.keys.sorted()
-    }
-
     var body: some View {
         @Bindable var model = model
         let service = $model.services[index]
         Form {
             Section {
                 Toggle("I pay for this now", isOn: service.current)
-                LabeledContent("Price per month") {
-                    TextField("Price per month", value: dollars(service.price), format: .currency(code: "USD"))
-                        .keyboardType(.decimalPad)
-                        .multilineTextAlignment(.trailing)
-                }
+                PriceField(price: service.price)
             }
             if service.wrappedValue.current {
                 Section {
-                    Picker("Renews on", selection: renewsDay(service.renews)) {
-                        ForEach(1...31, id: \.self) { Text("The \($0.ordinal)").tag($0) }
-                    }
-                    Picker("Billed through", selection: billedThrough(service)) {
-                        Text("\(service.wrappedValue.name) directly").tag(service.wrappedValue.name)
-                        ForEach(billers, id: \.self) { Text($0).tag($0) }
-                    }
+                    BillingFields(service: service)
                 } footer: {
-                    Text("Who bills you decides where you cancel. Check your bank or card statement if you're not sure.")
+                    Text(BillingFields.hint)
                 }
             }
         }
         .navigationTitle(service.wrappedValue.name)
     }
+}
 
-    private func dollars(_ cents: Binding<Cents>) -> Binding<Decimal> {
+/// Monthly price, edited in dollars and stored in cents.
+struct PriceField: View {
+    @Binding var price: Cents
+
+    var body: some View {
+        LabeledContent("Price per month") {
+            TextField("Price per month", value: dollars, format: .currency(code: "USD"))
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
+        }
+    }
+
+    private var dollars: Binding<Decimal> {
         Binding(
-            get: { Decimal(cents.wrappedValue) / 100 },
-            set: { cents.wrappedValue = NSDecimalNumber(decimal: ($0 * 100)).intValue }
+            get: { Decimal(price) / 100 },
+            set: { price = NSDecimalNumber(decimal: $0 * 100).intValue }
         )
     }
+}
 
-    private func renewsDay(_ day: Binding<Int?>) -> Binding<Int> {
-        Binding(get: { day.wrappedValue ?? 1 }, set: { day.wrappedValue = $0 })
+/// Renewal day and who bills the subscription.
+struct BillingFields: View {
+    @Binding var service: Service
+
+    static let hint = "Who bills you decides where you cancel. Check your bank or card statement if you're not sure."
+
+    /// "Directly" plus every billing provider we have management links for.
+    private var billers: [String] {
+        ManagementLinks.bundled.billers.keys.sorted()
     }
 
-    private func billedThrough(_ service: Binding<Service>) -> Binding<String> {
+    var body: some View {
+        Picker("Renews on", selection: renewsDay) {
+            ForEach(1...31, id: \.self) { Text("The \($0.ordinal)").tag($0) }
+        }
+        Picker("Billed through", selection: billedThrough) {
+            Text("\(service.name) directly").tag(service.name)
+            ForEach(billers, id: \.self) { Text($0).tag($0) }
+        }
+    }
+
+    private var renewsDay: Binding<Int> {
+        Binding(get: { service.renews ?? 1 }, set: { service.renews = $0 })
+    }
+
+    private var billedThrough: Binding<String> {
         Binding(
-            get: { service.wrappedValue.billedThrough ?? service.wrappedValue.name },
-            set: { service.wrappedValue.billedThrough = $0 }
+            get: { service.billedThrough ?? service.name },
+            set: { service.billedThrough = $0 }
         )
     }
 }
