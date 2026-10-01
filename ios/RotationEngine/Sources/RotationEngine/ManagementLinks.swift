@@ -37,16 +37,37 @@ public struct ManagementLinks: Decodable, Sendable {
     /// billers fall back to the service's own account page, which names the
     /// biller.
     public func link(service: String, billedThrough biller: String) -> String? {
+        switch resolve(service: service, billedThrough: biller) {
+        case .biller(let entry): entry.web
+        case .service(let entry): entry?.manage
+        }
+    }
+
+    /// Like `link`, but prefers the biller's iOS deep link when there is one
+    /// (Apple's opens Settings → Subscriptions directly).
+    public func iosLink(service: String, billedThrough biller: String) -> String? {
+        switch resolve(service: service, billedThrough: biller) {
+        case .biller(let entry): entry.ios ?? entry.web
+        case .service(let entry): entry?.manage
+        }
+    }
+
+    private enum Resolved {
+        case biller(Biller)
+        case service(ServiceEntry?)
+    }
+
+    private func resolve(service: String, billedThrough biller: String) -> Resolved {
         var biller = biller
         if exceptions.contains(where: { $0.services.contains(service) && $0.biller == biller && $0.use == "service" }) {
             biller = service
         }
         if let entry = billers[biller], biller != service {
-            return entry.web
+            return .biller(entry)
         }
         if let aliased = billers.values.first(where: { $0.aliases?.contains(biller) == true }) {
-            return aliased.web
+            return .biller(aliased)
         }
-        return services[service]?.manage
+        return .service(services[service])
     }
 }

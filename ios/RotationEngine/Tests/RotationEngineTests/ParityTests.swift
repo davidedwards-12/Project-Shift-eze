@@ -45,18 +45,12 @@ func fixture<T: Decodable>(_ name: String, as: T.Type) throws -> T {
     let config = try fixture("services", as: ServicesFile.self)
     let watchlist = try fixture("watchlist", as: WatchlistFile.self)
     let expected = try fixture("expected_plan", as: ExpectedPlan.self)
-    let budget = expected.budget_cents
 
-    let (catalog, all) = Planning.prepare(services: config.services, watchlist: watchlist.titles,
-                                          memberships: config.memberships ?? [:])
-    let (included, rest) = Planning.splitIncluded(all)
-    let (free, paid) = Planning.splitFree(rest)
-    let titles = paid.filter { !$0.services.isEmpty }
-    let cover = try #require(Planning.cheapestCover(titles, catalog: catalog, budget: budget))
-    let months = Planning.schedule(cover, catalog: catalog, budget: budget)
-    let placed = Planning.placeFree(free, months: months, catalog: catalog)
-    let savings = Savings(catalog: catalog, cover: cover, months: months)
-    let actions = Actions.plan(catalog: catalog, months: months, start: start, today: today)
+    let plan = try RotationPlan.make(
+        services: config.services, watchlist: watchlist.titles, memberships: config.memberships ?? [:],
+        budget: expected.budget_cents, start: start, today: today)
+    let (months, cover, actions, placed, savings) = (plan.months, plan.cover, plan.actions, plan.freePlacement, plan.savings)
+    let included = plan.included
 
     #expect(months.map { m in m.services.map { [ExpectedPlan.Value.string($0), .int(m.prices[$0]!)] } } == expected.months)
     #expect(cover.assignment == expected.assignment)

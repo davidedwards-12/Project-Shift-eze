@@ -215,6 +215,18 @@ func line(_ date: CalendarDate, _ title: String) -> String { "\(date) \(title)" 
         #expect(link("Peacock", "Roku") == links.billers["Roku"]!.web)
     }
 
+    @Test func iosLinksPreferTheBillersDeepLink() {
+        #expect(links.iosLink(service: "Netflix", billedThrough: "Apple") == "itms-apps://apps.apple.com/account/subscriptions")
+        #expect(links.iosLink(service: "Peacock", billedThrough: "Peacock") == link("Peacock", "Peacock"))
+        #expect(links.iosLink(service: "Netflix", billedThrough: "Roku") == links.billers["Roku"]!.web)
+    }
+
+    @Test func keepActionsHaveNoLinks() {
+        let hbo = Service(name: "HBO Max", price: 1699, current: true, renews: 28)
+        let keep = Actions.plan(catalog: Catalog([hbo]), months: [Month(), Month(["HBO Max": 1699])], start: start, today: today)[0]
+        #expect(keep.kind == .keep && keep.link == nil && keep.iosLink == nil)
+    }
+
     @Test func unknownBillerFallsBackToTheServicePage() {
         #expect(link("Netflix", "Some Cable Co") == links.services["Netflix"]!.manage)
     }
@@ -229,5 +241,33 @@ func line(_ date: CalendarDate, _ title: String) -> String { "\(date) \(title)" 
     @Test func monthsRollOverYears() {
         #expect(start.onDay(1, monthsLater: 3) == CalendarDate(2027, 1, 1))
         #expect(start.onDay(22, monthsLater: -1) == CalendarDate(2026, 9, 22))
+    }
+}
+
+@Suite struct WholePlan {
+    @Test func budgetBelowARequiredServiceFails() {
+        #expect(throws: RotationPlan.Failure.budgetTooLow) {
+            try RotationPlan.make(services: PlanningRules.services, watchlist: PlanningRules.watchlist,
+                                  budget: 1000, start: start, today: today)
+        }
+    }
+
+    @Test func onlyFreeAndUnavailableTitlesMakeAnEmptyPlan() throws {
+        let plan = try RotationPlan.make(services: PlanningRules.services, watchlist: [
+            WatchlistEntry(title: "Before Sunrise", services: [], free: ["Tubi TV"]),
+            WatchlistEntry(title: "Boy Friends", services: ["Some Tiny Service"]),
+        ], budget: 4000, start: start, today: today)
+        #expect(plan.months.isEmpty)
+        #expect(plan.freePlacement.freeOnly == ["Before Sunrise"])
+        #expect(plan.unavailable.map(\.name) == ["Boy Friends"])
+    }
+
+    @Test func titlesInAMonthListPaidThenAlsoFree() throws {
+        let plan = try RotationPlan.make(services: PlanningRules.services, watchlist: [
+            WatchlistEntry(title: "Stranger Things", services: ["Netflix"]),
+            WatchlistEntry(title: "Fighting Spirit", services: ["Netflix"], free: ["Plex"]),
+        ], budget: 4000, start: start, today: today)
+        #expect(plan.titles(in: 0, on: "Netflix").map(\.name) == ["Stranger Things", "Fighting Spirit"])
+        #expect(plan.titles(in: 0, on: "Netflix").map(\.alsoFree) == [false, true])
     }
 }

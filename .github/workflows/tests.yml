@@ -14,6 +14,19 @@ jobs:
       - run: swift --version
       - run: swift test --package-path ios/RotationEngine
 
+  app:
+    name: iOS app build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: xcodebuild -version
+      - run: >
+          xcodebuild build
+          -project ios/ShiftEze.xcodeproj
+          -scheme ShiftEze
+          -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO
+
   python:
     name: Python spike
     runs-on: ubuntu-latest

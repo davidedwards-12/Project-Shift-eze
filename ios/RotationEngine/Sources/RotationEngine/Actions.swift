@@ -11,8 +11,11 @@ public struct Action: Hashable, Sendable {
     public var kind: Kind
     public var service: String
     public var billedThrough: String
-    /// Where to do it. Nil for `keep`, which needs nothing.
+    /// Where to do it on the web. Nil for `keep`, which needs nothing.
     public var link: String?
+    /// Where to do it on iPhone: an app deep link when the biller has one
+    /// (Apple), otherwise the web link. Nil for `keep`.
+    public var iosLink: String?
 
     /// "Cancel Netflix"
     public var title: String { "\(kind.rawValue) \(service)" }
@@ -40,12 +43,14 @@ public enum Actions {
             let via = s.billedThrough ?? s.name
             var day = s.current ? (s.renews ?? 1) : 1
             let link = links.link(service: s.name, billedThrough: via)
+            let iosLink = links.iosLink(service: s.name, billedThrough: via)
             var subscribed = s.current
             var kept = false
 
             func add(_ date: CalendarDate, _ kind: Action.Kind) {
                 events.append(Action(date: date, kind: kind, service: s.name, billedThrough: via,
-                                     link: kind == .keep ? nil : link))
+                                     link: kind == .keep ? nil : link,
+                                     iosLink: kind == .keep ? nil : iosLink))
             }
 
             for k in 0...months.count {
