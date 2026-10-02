@@ -30,6 +30,21 @@ public struct CalendarDate: Hashable, Comparable, Sendable, CustomStringConverti
     /// The first of the following month.
     public var firstOfNextMonth: CalendarDate { onDay(1, monthsLater: 1) }
 
+    /// Whole days from this date to `other` (negative if `other` is earlier).
+    public func days(to other: CalendarDate) -> Int {
+        other.dayNumber - dayNumber
+    }
+
+    /// Days since 1970-01-01 (proleptic Gregorian calendar).
+    var dayNumber: Int {
+        let y = month <= 2 ? year - 1 : year
+        let era = (y >= 0 ? y : y - 399) / 400
+        let yearOfEra = y - era * 400
+        let dayOfYear = (153 * (month + (month > 2 ? -3 : 9)) + 2) / 5 + day - 1
+        let dayOfEra = yearOfEra * 365 + yearOfEra / 4 - yearOfEra / 100 + dayOfYear
+        return era * 146_097 + dayOfEra - 719_468
+    }
+
     static func daysIn(year: Int, month: Int) -> Int {
         switch month {
         case 2:
@@ -40,5 +55,22 @@ public struct CalendarDate: Hashable, Comparable, Sendable, CustomStringConverti
         default:
             return 31
         }
+    }
+}
+
+/// Saved as "2026-10-02".
+extension CalendarDate: Codable {
+    public init(from decoder: Decoder) throws {
+        let text = try decoder.singleValueContainer().decode(String.self)
+        let parts = text.split(separator: "-").compactMap { Int($0) }
+        guard parts.count == 3, (1...12).contains(parts[1]), (1...31).contains(parts[2]) else {
+            throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "Not a date: \(text)"))
+        }
+        self.init(parts[0], parts[1], parts[2])
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.singleValueContainer()
+        try c.encode(description)
     }
 }

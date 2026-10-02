@@ -295,3 +295,57 @@ func line(_ date: CalendarDate, _ title: String) -> String { "\(date) \(title)" 
         #expect(decoded == entry)
     }
 }
+
+@Suite struct NotOnAService {
+    @Test func markedServiceIsIgnoredForThatTitle() throws {
+        // The Bear is listed on Hulu and Disney+; Andor needs Disney+ anyway,
+        // so normally The Bear rides along on Disney+.
+        let watchlist = [
+            WatchlistEntry(title: "Andor", services: ["Disney Plus"]),
+            WatchlistEntry(title: "The Bear", services: ["Hulu", "Disney Plus"], notOn: ["Disney+"]),
+        ]
+        let plan = try RotationPlan.make(services: PlanningRules.services, watchlist: watchlist,
+                                         budget: 6000, start: start, today: today)
+        #expect(plan.cover.assignment["The Bear"] == "Hulu")
+        #expect(plan.title(id: "The Bear")?.services == ["Hulu"])
+        #expect(plan.title(id: "The Bear")?.notOn == ["Disney+"])
+    }
+
+    @Test func rawProviderNamesWorkToo() {
+        let (_, titles) = Planning.prepare(services: PlanningRules.services, watchlist: [
+            WatchlistEntry(title: "X", services: ["Netflix Standard with Ads", "Hulu"], notOn: ["Netflix"]),
+        ])
+        #expect(titles[0].services == ["Hulu"])
+    }
+
+    @Test func notOnAServiceItIsntListedOnIsIgnored() {
+        let (_, titles) = Planning.prepare(services: PlanningRules.services, watchlist: [
+            WatchlistEntry(title: "X", services: ["Hulu"], notOn: ["Netflix"]),
+        ])
+        #expect(titles[0].services == ["Hulu"])
+        #expect(titles[0].notOn.isEmpty)
+    }
+
+    @Test func checkedOnAndNotOnRoundTripThroughJSON() throws {
+        let entry = WatchlistEntry(id: "tmdb:tv:1", title: "X", services: ["Hulu"],
+                                   checkedOn: CalendarDate(2026, 10, 2), notOn: ["Netflix"])
+        let json = String(decoding: try JSONEncoder().encode(entry), as: UTF8.self)
+        #expect(json.contains(#""checkedOn":"2026-10-02""#))
+        #expect(try JSONDecoder().decode(WatchlistEntry.self, from: Data(json.utf8)) == entry)
+    }
+
+    @Test func olderEntriesWithoutTheNewFieldsStillLoad() throws {
+        let entry = try JSONDecoder().decode(WatchlistEntry.self, from: Data(#"{"title": "X", "services": ["Hulu"]}"#.utf8))
+        #expect(entry.checkedOn == nil)
+        #expect(entry.notOn == nil)
+    }
+}
+
+@Suite struct DayMaths {
+    @Test func daysBetweenDates() {
+        #expect(CalendarDate(2026, 10, 2).days(to: CalendarDate(2026, 10, 9)) == 7)
+        #expect(CalendarDate(2026, 12, 28).days(to: CalendarDate(2027, 1, 4)) == 7)
+        #expect(CalendarDate(2028, 2, 28).days(to: CalendarDate(2028, 3, 1)) == 2)  // leap year
+        #expect(CalendarDate(2026, 10, 9).days(to: CalendarDate(2026, 10, 2)) == -7)
+    }
+}

@@ -1,4 +1,5 @@
 import Foundation
+import RotationEngine
 import Testing
 @testable import TMDB
 
@@ -120,5 +121,50 @@ let providersJSON = """
     @Test func noConnectionIsNetwork() async {
         let client = TMDBClient(token: "eyJ") { _ in throw URLError(.notConnectedToInternet) }
         await #expect(throws: TMDBError.network) { try await client.search("x") }
+    }
+}
+
+@Suite struct Refreshing {
+    let oct2 = CalendarDate(2026, 10, 2)
+
+    @Test func readsTheTMDBReferenceFromAnId() {
+        #expect(SearchResult.reference(fromID: "tmdb:tv:136315")! == (.tv, 136315))
+        #expect(SearchResult.reference(fromID: "tmdb:movie:74")! == (.movie, 74))
+        #expect(SearchResult.reference(fromID: "Stranger Things") == nil)
+        #expect(SearchResult.reference(fromID: "tmdb:person:1") == nil)
+    }
+
+    @Test func refreshedEntryGetsNewProvidersAndKeepsUserSettings() async throws {
+        let stub = StubFetch(body: providersJSON)
+        let old = WatchlistEntry(id: "tmdb:tv:66732", title: "Stranger Things", services: ["Hulu"],
+                                 months: 2, checkedOn: CalendarDate(2026, 6, 1), notOn: ["Hulu"])
+        let new = try #require(try await stub.client().refreshed(old, today: oct2))
+        #expect(new.services == ["Netflix", "Netflix Standard with Ads"])
+        #expect(new.free == ["Tubi TV", "The Roku Channel"])
+        #expect(new.checkedOn == oct2)
+        #expect(new.months == 2)
+        #expect(new.notOn == ["Hulu"])
+        #expect(new.id == old.id && new.title == old.title)
+        #expect(stub.requests.first?.url?.path() == "/3/tv/66732/watch/providers")
+    }
+
+    @Test func titlesNotFromTMDBAreLeftAlone() async throws {
+        let stub = StubFetch(body: providersJSON)
+        let sample = WatchlistEntry(title: "Andor", services: ["Disney Plus"])
+        #expect(try await stub.client().refreshed(sample, today: oct2) == nil)
+        #expect(stub.requests.isEmpty)
+    }
+
+    @Test func whichTitlesAreDue() {
+        let watchlist = [
+            WatchlistEntry(id: "tmdb:tv:1", title: "never checked", services: []),
+            WatchlistEntry(id: "tmdb:tv:2", title: "checked today", services: [], checkedOn: oct2),
+            WatchlistEntry(id: "tmdb:tv:3", title: "6 days ago", services: [], checkedOn: CalendarDate(2026, 9, 26)),
+            WatchlistEntry(id: "tmdb:tv:4", title: "7 days ago", services: [], checkedOn: CalendarDate(2026, 9, 25)),
+            WatchlistEntry(id: "tmdb:tv:5", title: "yesterday, about to subscribe", services: [], checkedOn: CalendarDate(2026, 10, 1)),
+            WatchlistEntry(title: "sample, not from TMDB", services: []),
+        ]
+        let due = AvailabilityRefresh.due(watchlist, today: oct2, urgent: ["tmdb:tv:5"])
+        #expect(due == ["tmdb:tv:1", "tmdb:tv:4", "tmdb:tv:5"])
     }
 }

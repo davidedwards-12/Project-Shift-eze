@@ -13,7 +13,11 @@ struct WatchlistView: View {
             List {
                 Section {
                     ForEach(model.watchlist, id: \.id) { entry in
-                        WatchlistRow(title: titles[entry.id])
+                        NavigationLink {
+                            TitleDetailView(id: entry.id)
+                        } label: {
+                            WatchlistRow(title: titles[entry.id], isChecking: model.refreshing.contains(entry.id))
+                        }
                     }
                     .onDelete { model.watchlist.remove(atOffsets: $0) }
                     .onMove { model.watchlist.move(fromOffsets: $0, toOffset: $1) }
@@ -35,12 +39,18 @@ struct WatchlistView: View {
 
 private struct WatchlistRow: View {
     let title: Title?
+    let isChecking: Bool
 
     var body: some View {
         if let title {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title.name).font(.headline)
                 Text(whereToWatch(title)).font(.subheadline).foregroundStyle(.secondary)
+                if isChecking {
+                    Text("Checking…").font(.caption).foregroundStyle(.tertiary)
+                } else if let checked = title.checkedOn {
+                    Text("Checked \(checked.short)").font(.caption).foregroundStyle(.tertiary)
+                }
             }
         }
     }

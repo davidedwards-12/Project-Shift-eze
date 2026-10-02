@@ -30,7 +30,24 @@ public struct TMDBClient: Sendable {
 
     /// Where `result` streams in this client's region.
     public func providers(for result: SearchResult) async throws(TMDBError) -> Providers {
-        let response: ProvidersResponse = try await get("/\(result.mediaType.rawValue)/\(result.tmdbID)/watch/providers")
+        try await providers(mediaType: result.mediaType, tmdbID: result.tmdbID)
+    }
+
+    /// Re-fetch where a saved watchlist title streams. Returns nil for titles
+    /// that didn't come from TMDB (no `tmdb:` id). Keeps the user's own
+    /// settings (`notOn`, `months`) and stamps `checkedOn` with `today`.
+    public func refreshed(_ entry: WatchlistEntry, today: CalendarDate) async throws(TMDBError) -> WatchlistEntry? {
+        guard let ref = SearchResult.reference(fromID: entry.id) else { return nil }
+        let found = try await providers(mediaType: ref.mediaType, tmdbID: ref.tmdbID)
+        var updated = entry
+        updated.services = found.subscription
+        updated.free = found.free
+        updated.checkedOn = today
+        return updated
+    }
+
+    func providers(mediaType: SearchResult.MediaType, tmdbID: Int) async throws(TMDBError) -> Providers {
+        let response: ProvidersResponse = try await get("/\(mediaType.rawValue)/\(tmdbID)/watch/providers")
         let region = response.results[region]
         let names = { (list: [ProviderJSON]?) in (list ?? []).map(\.providerName) }
         return Providers(
@@ -114,9 +131,17 @@ public struct SearchResult: Identifiable, Hashable, Sendable {
     }
 
     /// A watchlist entry for this title, with raw provider names (the engine
-    /// normalizes them).
-    public func watchlistEntry(providers: Providers) -> WatchlistEntry {
-        WatchlistEntry(id: id, title: title, services: providers.subscription, free: providers.free)
+    /// normalizes them), checked on `checkedOn`.
+    public func watchlistEntry(providers: Providers, checkedOn: CalendarDate? = nil) -> WatchlistEntry {
+        WatchlistEntry(id: id, title: title, services: providers.subscription, free: providers.free, checkedOn: checkedOn)
+    }
+
+    /// The media type and TMDB id inside a watchlist id like "tmdb:tv:66732".
+    public static func reference(fromID id: String) -> (mediaType: MediaType, tmdbID: Int)? {
+        let parts = id.split(separator: ":")
+        guard parts.count == 3, parts[0] == "tmdb",
+              let type = MediaType(rawValue: String(parts[1])), let number = Int(parts[2]) else { return nil }
+        return (type, number)
     }
 
     init?(_ json: SearchResponse.Result) {

@@ -16,7 +16,8 @@ public enum Planning {
     /// Normalize raw watchlist entries against the catalog.
     ///
     /// Provider names map to services via names and aliases; untracked ones
-    /// (e.g. cable VOD) are dropped. A service whose `includedWith` membership
+    /// (e.g. cable VOD) are dropped, and so are services the user marked the
+    /// title as not on. A service whose `includedWith` membership
     /// the user has makes its titles `included`.
     public static func prepare(
         services: [Service],
@@ -30,7 +31,9 @@ public enum Planning {
         }
 
         let titles = watchlist.map { entry -> Title in
-            let on = Set(entry.services.compactMap { lookup[$0.lowercased()] }).sorted()
+            let listed = Set(entry.services.compactMap { lookup[$0.lowercased()] })
+            let excluded = Set((entry.notOn ?? []).compactMap { lookup[$0.lowercased()] }).intersection(listed)
+            let on = listed.subtracting(excluded).sorted()
             let free = entry.free ?? []
             return Title(
                 id: entry.id,
@@ -39,7 +42,9 @@ public enum Planning {
                 free: free.filter { trustedFree.contains($0.lowercased()) },
                 library: free.filter { library.contains($0.lowercased()) },
                 included: on.filter { includedServices.contains($0) },
-                months: entry.months ?? 1
+                months: entry.months ?? 1,
+                checkedOn: entry.checkedOn,
+                notOn: excluded.sorted()
             )
         }
         return (Catalog(services), titles)

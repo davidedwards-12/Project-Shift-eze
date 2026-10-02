@@ -77,18 +77,34 @@ public struct WatchlistEntry: Hashable, Sendable {
     public var services: [String]
     public var free: [String]?
     public var months: Int?
+    /// When `services` and `free` were last fetched from TMDB. Nil for titles
+    /// that never were (e.g. the bundled sample data).
+    public var checkedOn: CalendarDate?
+    /// Services (normalized names) the user says this title isn't actually
+    /// on, whatever TMDB says. The plan ignores them for this title.
+    public var notOn: [String]?
 
-    public init(id: String? = nil, title: String, services: [String], free: [String]? = nil, months: Int? = nil) {
+    public init(
+        id: String? = nil,
+        title: String,
+        services: [String],
+        free: [String]? = nil,
+        months: Int? = nil,
+        checkedOn: CalendarDate? = nil,
+        notOn: [String]? = nil
+    ) {
         self.id = id ?? title
         self.title = title
         self.services = services
         self.free = free
         self.months = months
+        self.checkedOn = checkedOn
+        self.notOn = notOn
     }
 }
 
 extension WatchlistEntry: Codable {
-    enum CodingKeys: String, CodingKey { case id, title, services, free, months }
+    enum CodingKeys: String, CodingKey { case id, title, services, free, months, checkedOn, notOn }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -97,6 +113,8 @@ extension WatchlistEntry: Codable {
         services = try c.decodeIfPresent([String].self, forKey: .services) ?? []
         free = try c.decodeIfPresent([String].self, forKey: .free)
         months = try c.decodeIfPresent(Int.self, forKey: .months)
+        checkedOn = try c.decodeIfPresent(CalendarDate.self, forKey: .checkedOn)
+        notOn = try c.decodeIfPresent([String].self, forKey: .notOn)
     }
 }
 
@@ -115,6 +133,11 @@ public struct Title: Hashable, Sendable {
     public var included: [String]
     /// How many months it takes to watch.
     public var months: Int
+    /// When availability was last fetched; nil if never.
+    public var checkedOn: CalendarDate? = nil
+    /// Services TMDB lists but the user says it isn't on; excluded from
+    /// `services`.
+    public var notOn: [String] = []
 }
 
 /// The services a plan can use, by name, in their original order.
