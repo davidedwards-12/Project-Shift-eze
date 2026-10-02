@@ -107,6 +107,16 @@ python3 spikes/check_links.py                  # management links still resolve
 Run the tests after any change to `spikes/rotation/`. They pin the same
 planning rules as the Swift tests.
 
+## CI
+
+`.github/workflows/tests.yml` runs the Swift package tests, the app build and
+the Python spike tests on every PR and push to `main`; a newer push cancels
+the older run. The Mac jobs use the `xcode-27` runner image with Xcode pinned
+via `XCODE_APP` (the version the team builds with locally); upgrade it there
+deliberately. `.github/workflows/links.yml` runs `spikes/check_links.py`
+every Monday and can be started by hand from the Actions tab. The TMDB key is
+never needed in CI.
+
 ## Hard rules
 
 - **No AI attribution anywhere.** Commit messages, trailers, PR titles and

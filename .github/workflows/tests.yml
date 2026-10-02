@@ -5,20 +5,33 @@ on:
   push:
     branches: [main]
 
+# A newer push to the same branch or PR replaces the older run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# The Xcode the team builds with locally. Change it here (and the runner
+# image below) when upgrading, so upgrades are deliberate rather than
+# whatever the runner image defaults to that day.
+env:
+  XCODE_APP: /Applications/Xcode_27.0.app
+
 jobs:
   swift:
     name: Swift engine
-    runs-on: macos-latest
+    runs-on: xcode-27
     steps:
       - uses: actions/checkout@v4
+      - run: sudo xcode-select -s "$XCODE_APP"
       - run: swift --version
       - run: swift test --package-path ios/RotationEngine
 
   app:
     name: iOS app build
-    runs-on: macos-latest
+    runs-on: xcode-27
     steps:
       - uses: actions/checkout@v4
+      - run: sudo xcode-select -s "$XCODE_APP"
       - run: xcodebuild -version
       - run: >
           xcodebuild build

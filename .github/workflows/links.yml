@@ -1,0 +1,21 @@
+name: Management links
+
+# Providers move their cancel/restart pages around. Check every link weekly so
+# a broken one is caught before a user taps it. Fails only on genuinely broken
+# links (404, 5xx, unreachable); sites that block automated checks are listed
+# but don't fail the run.
+on:
+  schedule:
+    - cron: "0 14 * * 1"  # Mondays, 14:00 UTC
+  workflow_dispatch:       # "Run workflow" button in the Actions tab
+
+jobs:
+  check:
+    name: Check management links
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python spikes/check_links.py
