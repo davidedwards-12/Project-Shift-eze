@@ -3,7 +3,7 @@ name: Tests
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [master]
 
 # A newer push to the same branch or PR replaces the older run.
 concurrency:

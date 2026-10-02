@@ -121,7 +121,7 @@ planning rules as the Swift tests.
 ## CI
 
 `.github/workflows/tests.yml` runs the Swift package tests, the app build and
-the Python spike tests on every PR and push to `main`; a newer push cancels
+the Python spike tests on every PR and push to `master`; a newer push cancels
 the older run. The Mac jobs use the `xcode-27` runner image with Xcode pinned
 via `XCODE_APP` (the version the team builds with locally); upgrade it there
 deliberately. `.github/workflows/links.yml` runs `spikes/check_links.py`
@@ -147,12 +147,12 @@ never needed in CI.
 
 ## Git
 
-- App code exists now: one branch per change and a PR into `main`. Don't
-  commit app code straight to `main`.
-- `main` is protected: PRs need the Swift engine, iOS app build and Python
+- App code exists now: one branch per change and a PR into `master`. Don't
+  commit app code straight to `master`.
+- `master` is protected: PRs need the Swift engine, iOS app build and Python
   spike checks to pass before merging. Admins (Dave) can still push docs-only
-  changes straight to `main`; everyone else goes through a PR. No force
-  pushes or deleting `main`.
+  changes straight to `master`; everyone else goes through a PR. No force
+  pushes or deleting `master`.
 - Short, imperative commit subjects describing what changed.
 
 ## Labels
