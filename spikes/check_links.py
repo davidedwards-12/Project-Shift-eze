@@ -19,7 +19,15 @@ from pathlib import Path
 
 LINKS = Path(__file__).resolve().parent.parent / "ios/RotationEngine/Sources/RotationEngine/Resources/management_links.json"
 FIELDS = ("manage", "cancel", "web", "android", "source")
-HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 Safari/605.1.15"}
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 Safari/605.1.15",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+}
+# How sites turn away scripts and data-center IPs (e.g. GitHub's CI machines):
+# the page may be fine for a person, so these are "blocked", not "broken".
+# 406: Paramount+ from CI; 503: Amazon.
+BLOCKED = {401, 403, 406, 429, 503}
 
 
 def urls():
@@ -45,7 +53,7 @@ def check(url):
         except urllib.error.HTTPError as e:
             if method == "HEAD":
                 continue
-            if e.code in (401, 403, 429, 503):  # 503: also how Amazon turns away scripts
+            if e.code in BLOCKED:
                 return "blocked", e.code
             return "BROKEN", e.code
         except Exception as e:  # DNS, TLS, timeout
