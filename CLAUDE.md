@@ -64,6 +64,16 @@ search says the key isn't set. **Development only**: a key in the app can be
 extracted, so TMDB calls must move to a server before anyone else gets the
 app. Search results must keep the TMDB and JustWatch credit.
 
+Availability goes stale, so watchlist entries carry `checkedOn` (last TMDB
+fetch) and `notOn` (services the user says the title isn't on; planning
+ignores them). `AppModel.refreshAvailability()` runs on launch and on return
+to the foreground and re-fetches TMDB titles older than 7 days, or 1 day if
+they're behind a Start/Restart in the next week (`AvailabilityRefresh` in the
+`TMDB` target). Failures keep the old data. Tapping a watchlist title opens
+`TitleDetailView` ("Not there?", "Check again now"); Start/Restart actions on
+the Plan tab carry a "check it's there first" note. Titles without a `tmdb:`
+id (sample data) can't be refreshed.
+
 App colors come from `ShiftEze/Theme.swift`: roles like `Theme.accent`,
 `Theme.background` and `Theme.gradient`, with values from `docs/BRAND.md`.
 Don't use raw hex in views. Screens don't use the theme yet; that's the

@@ -125,7 +125,7 @@ struct TitleSearchView: View {
             status = .done
         } catch {
             guard !Task.isCancelled else { return }
-            status = .failed(message(for: error))
+            status = .failed(error.userMessage)
         }
     }
 
@@ -145,19 +145,12 @@ struct TitleSearchView: View {
         defer { adding = nil }
         do {
             let providers = try await client.providers(for: result)
-            model.watchlist.append(result.watchlistEntry(providers: providers))
+            model.watchlist.append(result.watchlistEntry(providers: providers, checkedOn: model.today))
         } catch {
-            addError = message(for: error)
+            addError = error.userMessage
         }
     }
 
-    private func message(for error: TMDBError) -> String {
-        switch error {
-        case .network: "Couldn't reach TMDB. Check your connection and try again."
-        case .unauthorized: "TMDB didn't accept the key. Check ios/Secrets.xcconfig."
-        case .http, .unreadable: "TMDB had a problem. Try again in a moment."
-        }
-    }
 }
 
 private struct SearchField: View {

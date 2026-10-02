@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import Persistence
 import RotationEngine
+import TMDB
 
 /// The user's subscriptions, watchlist and budget. Every change is saved to
 /// the phone, and the plan is recomputed from them whenever it's read.
@@ -17,6 +18,8 @@ final class AppModel {
 
     /// Shown once when saved data couldn't be read or written.
     var storageNotice: String?
+    /// Watchlist ids whose availability is being re-checked right now.
+    var refreshing: Set<String> = []
 
     /// Nil for previews: nothing is saved.
     @ObservationIgnored private let store: Store?
@@ -96,6 +99,79 @@ final class AppModel {
         } catch {
             return .failure(error)
         }
+    }
+
+    // MARK: - Availability
+
+    /// Re-check where watchlist titles stream: anything older than a week,
+    /// or a day for titles behind a Start/Restart in the next week. Failures
+    /// (offline, TMDB down) keep the old data and are retried next time.
+    func refreshAvailability() async {
+        guard let client = AppConfig.tmdbClient else { return }
+        let due = Set(AvailabilityRefresh.due(watchlist, today: today, urgent: idsBehindUpcomingStarts))
+            .subtracting(refreshing)
+        guard !due.isEmpty else { return }
+        refreshing.formUnion(due)
+        // One at a time, in watchlist order, to stay well inside TMDB's limits.
+        for entry in watchlist where due.contains(entry.id) {
+            if let updated = try? await client.refreshed(entry, today: today),
+               let index = watchlist.firstIndex(where: { $0.id == entry.id }) {
+                watchlist[index] = updated
+            }
+            refreshing.remove(entry.id)
+        }
+        refreshing.subtract(due)
+    }
+
+    enum CheckResult: Equatable {
+        case unchanged, changed
+        case failed(String)
+    }
+
+    /// "Check again now": re-check one title and say what happened, so the
+    /// user gets an answer even when nothing changed.
+    func checkNow(_ id: String) async -> CheckResult {
+        guard let client = AppConfig.tmdbClient else { return .failed("TMDB key not set.") }
+        guard let entry = watchlist.first(where: { $0.id == id }) else { return .failed("It's no longer on your watchlist.") }
+        let started = ContinuousClock.now
+        refreshing.insert(id)
+        defer { refreshing.remove(id) }
+
+        let result: CheckResult
+        do {
+            if let updated = try await client.refreshed(entry, today: today),
+               let index = watchlist.firstIndex(where: { $0.id == id }) {
+                let changed = watchlist[index].services != updated.services || watchlist[index].free != updated.free
+                watchlist[index] = updated
+                result = changed ? .changed : .unchanged
+            } else {
+                result = .failed("This title can't be re-checked.")
+            }
+        } catch {
+            result = .failed(error.userMessage)
+        }
+        // A check often takes a fraction of a second; keep "Checking…" up
+        // long enough to see that something happened.
+        try? await Task.sleep(until: started + .milliseconds(700))
+        return result
+    }
+
+    /// Say a title isn't (or is after all) on a service, whatever TMDB says.
+    func setNotOn(_ service: String, _ isNotOn: Bool, titleID: String) {
+        guard let index = watchlist.firstIndex(where: { $0.id == titleID }) else { return }
+        var notOn = Set(watchlist[index].notOn ?? [])
+        if isNotOn { notOn.insert(service) } else { notOn.remove(service) }
+        watchlist[index].notOn = notOn.isEmpty ? nil : notOn.sorted()
+    }
+
+    /// Titles the plan will soon have the user subscribe for: worth checking
+    /// daily so we don't send them to a service that's dropped the title.
+    private var idsBehindUpcomingStarts: Set<String> {
+        guard case .success(let plan) = plan else { return [] }
+        let services = Set(plan.actions
+            .filter { ($0.kind == .start || $0.kind == .restart) && today.days(to: $0.date) <= 7 }
+            .map(\.service))
+        return Set(plan.cover.assignment.filter { services.contains($0.value) }.keys)
     }
 
     /// Watchlist titles with provider names normalized, for display.

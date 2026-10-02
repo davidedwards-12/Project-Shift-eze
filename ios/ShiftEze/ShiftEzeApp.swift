@@ -3,6 +3,7 @@ import SwiftUI
 @main
 struct ShiftEzeApp: App {
     @State private var model = AppModel.launch()
+    @Environment(\.scenePhase) private var scenePhase
 
     private var showOnboarding: Binding<Bool> {
         Binding(
@@ -21,6 +22,12 @@ struct ShiftEzeApp: App {
             .environment(model)
             .fullScreenCover(isPresented: showOnboarding) {
                 OnboardingView().environment(model)
+            }
+            // Keep streaming availability fresh: on launch and whenever the
+            // app comes back to the foreground.
+            .task { await model.refreshAvailability() }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { Task { await model.refreshAvailability() } }
             }
         }
     }

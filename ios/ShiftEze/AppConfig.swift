@@ -13,3 +13,14 @@ enum AppConfig {
 
     static var tmdbClient: TMDBClient? { tmdbToken.map { TMDBClient(token: $0) } }
 }
+
+extension TMDBError {
+    /// What to tell the user.
+    var userMessage: String {
+        switch self {
+        case .network: "Couldn't reach TMDB. Check your connection and try again."
+        case .unauthorized: "TMDB didn't accept the key. Check ios/Secrets.xcconfig."
+        case .http, .unreadable: "TMDB had a problem. Try again in a moment."
+        }
+    }
+}

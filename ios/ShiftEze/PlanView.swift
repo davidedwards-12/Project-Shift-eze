@@ -24,7 +24,7 @@ struct PlanView: View {
                     BudgetSection(budget: $model.budget)
                     if !model.watchlist.isEmpty {
                         // Everything is free or included: cancelling is real advice.
-                        ActionsSection(actions: plan.actions)
+                        ActionsSection(plan: plan)
                     }
                     ElsewhereSection(plan: plan, hasAmazonPrime: model.hasAmazonPrime)
                 case .success(let plan):
@@ -33,7 +33,7 @@ struct PlanView: View {
                     ForEach(plan.months.indices, id: \.self) { index in
                         MonthSection(plan: plan, index: index)
                     }
-                    ActionsSection(actions: plan.actions)
+                    ActionsSection(plan: plan)
                     ElsewhereSection(plan: plan, hasAmazonPrime: model.hasAmazonPrime)
                 case .failure:
                     BudgetSection(budget: $model.budget)
@@ -153,22 +153,39 @@ private struct MonthSection: View {
 }
 
 private struct ActionsSection: View {
-    let actions: [Action]
+    let plan: RotationPlan
     @Environment(\.openURL) private var openURL
 
     var body: some View {
         Section("Upcoming actions") {
-            ForEach(actions, id: \.self) { action in
+            ForEach(plan.actions, id: \.self) { action in
+                let note = headsUp(for: action)
                 if let link = action.iosLink ?? action.link, let url = URL(string: link) {
                     Button { open(url, fallback: action.link.flatMap(URL.init(string:))) } label: {
-                        ActionRow(action: action, opensLink: true)
+                        ActionRow(action: action, opensLink: true, note: note)
                     }
                     .buttonStyle(.plain)
                 } else {
-                    ActionRow(action: action, opensLink: false)
+                    ActionRow(action: action, opensLink: false, note: note)
                 }
             }
         }
+    }
+
+    /// Before subscribing: a nudge to check the titles really are there,
+    /// since TMDB is sometimes wrong or out of date.
+    private func headsUp(for action: Action) -> String? {
+        guard action.kind == .start || action.kind == .restart else { return nil }
+        let titles = plan.paid.filter { plan.cover.assignment[$0.id] == action.service }
+        guard let first = titles.first else { return nil }
+        let names = switch titles.count {
+        case 1: first.name
+        case 2: "\(first.name) and \(titles[1].name)"
+        default: "\(first.name) and \(titles.count - 1) more"
+        }
+        let dates = titles.compactMap(\.checkedOn)
+        let checked = dates.count == titles.count ? dates.min().map { " · checked \($0.short)" } ?? "" : ""
+        return "Check \(names) \(titles.count == 1 ? "is" : "are") on \(action.service) first\(checked)"
     }
 
     /// Open the app deep link; if nothing handles it (e.g. no App Store in
@@ -183,6 +200,7 @@ private struct ActionsSection: View {
 private struct ActionRow: View {
     let action: Action
     let opensLink: Bool
+    var note: String?
 
     var body: some View {
         HStack {
@@ -192,6 +210,12 @@ private struct ActionRow: View {
             VStack(alignment: .leading) {
                 Text(action.title).font(.headline)
                 Text(action.detail).font(.subheadline).foregroundStyle(.secondary)
+                if let note {
+                    Label(note, systemImage: "info.circle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 2)
+                }
             }
             Spacer()
             Text(action.date.short).monospacedDigit().foregroundStyle(.secondary)
