@@ -12,7 +12,7 @@ This is a subscription **optimizer**, not just a subscription tracker.
 
 ## Early build
 
-A first working version of the iOS app, with sample data. The look is a placeholder until the product is named.
+An early version of the iOS app, shown with sample data. The look is a placeholder until the product is named.
 
 | Plan | Upcoming actions | Services | Watchlist |
 | --- | --- | --- | --- |
@@ -95,4 +95,12 @@ Rotation modes (Cheapest, Watchlist, Sports, Family, Binge, Never Pay Unused), h
 
 ## Status
 
-Prototypes done (`spikes/`). The iOS app is in progress (`ios/`): a Swift planning engine with tests and a first version of the Plan, Services and Watchlist screens. Next: TMDB search and saving data on the phone.
+Prototypes done (`spikes/`). The iOS app is in progress (`ios/`):
+
+- Swift planning engine with tests
+- Plan, Services and Watchlist screens
+- First-launch onboarding
+- TMDB search, with availability re-checked automatically and corrections from users
+- Data saved on the phone
+
+Next: reminders before upcoming actions, and TestFlight builds for the team. Then a design pass once the product is named.
