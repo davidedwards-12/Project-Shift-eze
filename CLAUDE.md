@@ -138,6 +138,10 @@ never needed in CI.
 
 - App code exists now: one branch per change and a PR into `main`. Don't
   commit app code straight to `main`.
+- `main` is protected: PRs need the Swift engine, iOS app build and Python
+  spike checks to pass before merging. Admins (Dave) can still push docs-only
+  changes straight to `main`; everyone else goes through a PR. No force
+  pushes or deleting `main`.
 - Short, imperative commit subjects describing what changed.
 
 ## Labels
