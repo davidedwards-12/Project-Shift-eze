@@ -19,6 +19,10 @@ public struct Action: Hashable, Sendable {
 
     /// "Cancel Netflix"
     public var title: String { "\(kind.rawValue) \(service)" }
+    
+    /// Stable across launches, so "done" survives replanning:
+    /// "cancel-Netflix-2026-10-22"
+    public var id: String { "\(kind.rawValue.lowercased())-\(service)-\(date)"}
 }
 
 public enum Actions {

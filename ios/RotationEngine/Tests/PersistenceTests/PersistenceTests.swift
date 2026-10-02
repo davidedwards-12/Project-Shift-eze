@@ -66,6 +66,15 @@ let sampleState = SavedState(
         #expect(state.hasCompletedOnboarding)
     }
 
+    @Test func doneActionsRoundTripAndDefaultToEmpty() throws {
+        var state = sampleState
+        state.doneActions = ["cancel-Netflix-2026-10-22"]
+        let store = tempStore()
+        try store.save(state)
+        #expect(store.load() == .loaded(state))
+        #expect(sampleState.doneActions.isEmpty)
+    }
+
     @Test func notOnboardedIsSavedAndLoaded() throws {
         var state = sampleState
         state.hasCompletedOnboarding = false

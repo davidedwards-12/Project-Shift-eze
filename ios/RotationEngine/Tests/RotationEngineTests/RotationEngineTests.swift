@@ -349,3 +349,69 @@ func line(_ date: CalendarDate, _ title: String) -> String { "\(date) \(title)" 
         #expect(CalendarDate(2026, 10, 9).days(to: CalendarDate(2026, 10, 2)) == -7)
     }
 }
+
+@Suite struct ReminderRules {
+    // Netflix renews on the 22nd and isn't needed; Hulu starts with the plan
+    // (October, see `start`).
+    static let services = [
+        Service(name: "Netflix", price: 2499, current: true, renews: 22, billedThrough: "Apple"),
+        Service(name: "Hulu", price: 1899),
+    ]
+    static let watchlist = [WatchlistEntry(title: "The Bear", services: ["Hulu"])]
+
+    func plan(today: CalendarDate = today) throws -> RotationPlan {
+        try RotationPlan.make(services: Self.services, watchlist: Self.watchlist,
+                              budget: 4000, start: start, today: today)
+    }
+
+    @Test func cancelIsRemindedTwoDaysEarly() throws {
+        let cancel = try #require(Reminders.make(plan: try plan(), today: today).first { $0.action.kind == .cancel })
+        #expect(cancel.action.date == d(10, 22))
+        #expect(cancel.day == d(10, 20))
+    }
+
+    @Test func startIsRemindedOnTheDayWithItsTitles() throws {
+        let startHulu = try #require(Reminders.make(plan: try plan(), today: today).first { $0.action.kind == .start })
+        #expect(startHulu.day == d(10, 1))
+        #expect(startHulu.titles == ["The Bear"])
+    }
+
+    @Test func cancelDueTomorrowIsRemindedToday() throws {
+        let oct21 = d(10, 21)
+        let cancel = try #require(Reminders.make(plan: try plan(today: oct21), today: oct21).first { $0.action.kind == .cancel })
+        #expect(cancel.day == oct21)
+    }
+
+    @Test func doneActionsAndKeepsAreSkipped() throws {
+        let plan = try plan()
+        let all = Reminders.make(plan: plan, today: today)
+        #expect(!all.contains { $0.action.kind == .keep })
+        let cancelID = try #require(all.first { $0.action.kind == .cancel }).id
+        #expect(!Reminders.make(plan: plan, today: today, done: [cancelID]).contains { $0.id == cancelID })
+    }
+
+    @Test func pastActionsAreSkipped() throws {
+        let later = d(12, 15)
+        #expect(Reminders.make(plan: try plan(), today: later).allSatisfy { $0.action.date >= later })
+    }
+
+    @Test func soonestFirst() throws {
+        let days = Reminders.make(plan: try plan(), today: today).map(\.day)
+        #expect(days == days.sorted())
+    }
+
+    @Test func actionIdsAreStable() throws {
+        let ids = try plan().actions.map(\.id)
+        #expect(ids.contains("cancel-Netflix-2026-10-22"))
+    }
+}
+
+@Suite struct AddingDays {
+    @Test func addsAcrossMonthsYearsAndLeapDays() {
+        #expect(CalendarDate(2026, 10, 22).adding(days: -2) == CalendarDate(2026, 10, 20))
+        #expect(CalendarDate(2026, 11, 1).adding(days: -2) == CalendarDate(2026, 10, 30))
+        #expect(CalendarDate(2027, 1, 1).adding(days: -1) == CalendarDate(2026, 12, 31))
+        #expect(CalendarDate(2028, 2, 28).adding(days: 1) == CalendarDate(2028, 2, 29))
+        #expect(CalendarDate(2026, 10, 2).adding(days: 0) == CalendarDate(2026, 10, 2))
+    }
+}

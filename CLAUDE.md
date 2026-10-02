@@ -74,6 +74,17 @@ they're behind a Start/Restart in the next week (`AvailabilityRefresh` in the
 the Plan tab carry a "check it's there first" note. Titles without a `tmdb:`
 id (sample data) can't be refreshed.
 
+Reminders are local notifications only: no push, no server, nothing leaves
+the phone. `Reminders.make` (engine) picks what to remind and when: cancels 2
+days before the renewal (or today if sooner), starts and restarts on the day,
+no reminder for keeps, skipping past actions and ones the user marked done
+(`doneActions`, saved; swipe left on an action). `ReminderScheduler` (app)
+turns them into notifications at 9am local time and reschedules whenever the
+plan changes; iOS allows 64 pending, so at most 60 are scheduled. Permission
+is asked once onboarding is done and there's something to remind about.
+`NotificationHandler` opens the cancel/restart page when one is tapped. Action
+ids (`cancel-Netflix-2026-10-22`) are stable, so "done" survives replanning.
+
 App colors come from `ShiftEze/Theme.swift`: roles like `Theme.accent`,
 `Theme.background` and `Theme.gradient`, with values from `docs/BRAND.md`.
 Don't use raw hex in views. Screens don't use the theme yet; that's the
