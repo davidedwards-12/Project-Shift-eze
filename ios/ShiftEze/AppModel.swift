@@ -15,6 +15,8 @@ final class AppModel {
     var budget: Cents { didSet { save() } }
     /// False until first-launch setup is finished or skipped.
     var hasCompletedOnboarding: Bool { didSet { save() } }
+    /// Ids of actions the user marked done; they stop being reminded
+    var doneActions: Set<String> { didSet { save() } }
 
     /// Shown once when saved data couldn't be read or written.
     var storageNotice: String?
@@ -30,6 +32,7 @@ final class AppModel {
         hasAmazonPrime = state.hasAmazonPrime
         budget = state.budget
         hasCompletedOnboarding = state.hasCompletedOnboarding
+        doneActions = Set(state.doneActions)
         self.store = store
     }
 
@@ -61,6 +64,7 @@ final class AppModel {
         hasAmazonPrime = sample.hasAmazonPrime
         budget = sample.budget
         hasCompletedOnboarding = true
+        doneActions = []
     }
 
     /// For testing: show first-launch setup again, keeping current data.
@@ -70,7 +74,7 @@ final class AppModel {
 
     private var state: SavedState {
         SavedState(services: services, watchlist: watchlist, hasAmazonPrime: hasAmazonPrime,
-                   budget: budget, hasCompletedOnboarding: hasCompletedOnboarding)
+                   budget: budget, hasCompletedOnboarding: hasCompletedOnboarding, doneActions: doneActions.sorted())
     }
 
     private func save() {
@@ -101,6 +105,18 @@ final class AppModel {
         }
     }
 
+    // MARK: - Reminders
+    
+    /// Notifications for the plan's upcoming actions
+    var reminders: [Reminder] {
+        guard case .success(let plan) = plan else { return [] }
+        return Reminders.make(plan: plan, today: today, done: doneActions)
+    }
+    
+    func setDone(_ action: Action, _ done: Bool) {
+        if done { doneActions.insert(action.id) } else { doneActions.remove(action.id) }
+    }
+    
     // MARK: - Availability
 
     /// Re-check where watchlist titles stream: anything older than a week,

@@ -13,23 +13,27 @@ public struct SavedState: Codable, Equatable, Sendable {
     public var budget: Cents
     /// False until the user finishes or skips first-launch setup.
     public var hasCompletedOnboarding: Bool
+    /// Ids of actions the user marked done; they stop being reminded
+    public var doneActions: [String]
 
     public init(
         services: [Service],
         watchlist: [WatchlistEntry],
         hasAmazonPrime: Bool,
         budget: Cents,
-        hasCompletedOnboarding: Bool = true
+        hasCompletedOnboarding: Bool = true,
+        doneActions: [String] = []
     ) {
         self.services = services
         self.watchlist = watchlist
         self.hasAmazonPrime = hasAmazonPrime
         self.budget = budget
         self.hasCompletedOnboarding = hasCompletedOnboarding
+        self.doneActions = doneActions
     }
 
     enum CodingKeys: String, CodingKey {
-        case version, services, watchlist, hasAmazonPrime, budget, hasCompletedOnboarding
+        case version, services, watchlist, hasAmazonPrime, budget, hasCompletedOnboarding, doneActions
     }
 
     public init(from decoder: Decoder) throws {
@@ -41,6 +45,7 @@ public struct SavedState: Codable, Equatable, Sendable {
         budget = try c.decode(Cents.self, forKey: .budget)
         // Saved before onboarding existed: that user is already set up.
         hasCompletedOnboarding = try c.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding) ?? true
+        doneActions = try c.decodeIfPresent([String].self, forKey: .doneActions) ?? []
     }
 
     /// Fix values that would break planning or the screens: negative prices,

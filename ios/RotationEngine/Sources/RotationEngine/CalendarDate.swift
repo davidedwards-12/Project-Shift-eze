@@ -29,6 +29,22 @@ public struct CalendarDate: Hashable, Comparable, Sendable, CustomStringConverti
 
     /// The first of the following month.
     public var firstOfNextMonth: CalendarDate { onDay(1, monthsLater: 1) }
+    
+    public func adding(days: Int) -> CalendarDate {
+        CalendarDate(dayNumber: dayNumber + days)
+    }
+    
+    init(dayNumber: Int) {
+        let z = dayNumber + 719_468
+        let era = (z >= 0 ? z : z - 146_096) / 146_097
+        let dayOfEra = z - era * 146_097
+        let yearOfEra = (dayOfEra - dayOfEra / 1460 + dayOfEra / 36_524 - dayOfEra / 146_096) / 365
+        let dayOfYear = dayOfEra - (365 * yearOfEra + yearOfEra / 4 - yearOfEra / 100)
+        let mp = (5 * dayOfYear + 2) / 153
+        let day = dayOfYear - (153 * mp + 2) / 5 + 1
+        let month = mp < 10 ? mp + 3 : mp - 9
+        self.init(yearOfEra + era * 400 + (month <= 2 ? 1 : 0), month, day)
+    }
 
     /// Whole days from this date to `other` (negative if `other` is earlier).
     public func days(to other: CalendarDate) -> Int {

@@ -154,21 +154,37 @@ private struct MonthSection: View {
 
 private struct ActionsSection: View {
     let plan: RotationPlan
+    @Environment(AppModel.self) private var model
     @Environment(\.openURL) private var openURL
 
     var body: some View {
-        Section("Upcoming actions") {
+        Section {
             ForEach(plan.actions, id: \.self) { action in
                 let note = headsUp(for: action)
-                if let link = action.iosLink ?? action.link, let url = URL(string: link) {
-                    Button { open(url, fallback: action.link.flatMap(URL.init(string:))) } label: {
-                        ActionRow(action: action, opensLink: true, note: note)
+                let done = model.doneActions.contains(action.id)
+                Group {
+                    if let link = action.iosLink ?? action.link, let url = URL(string: link), !done {
+                        Button { open(url, fallback: action.link.flatMap(URL.init(string:))) } label: {
+                            ActionRow(action: action, opensLink: true, note: note, isDone: done)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        ActionRow(action: action, opensLink: false, note: done ? nil : note, isDone: done)
                     }
-                    .buttonStyle(.plain)
-                } else {
-                    ActionRow(action: action, opensLink: false, note: note)
+                }
+                .swipeActions {
+                    if action.kind != .keep {
+                        Button(done ? "Undo" : "Done", systemImage: done ? "arrow.uturn.backward" : "checkmark") {
+                            model.setDone(action, !done)
+                        }
+                        .tint(done ? .gray : .green)
+                    }
                 }
             }
+        } header: {
+            Text("Upcoming actions")
+        } footer: {
+            Text("We'll remind you before each one. Swipe left to mark it done.")
         }
     }
 
@@ -201,14 +217,18 @@ private struct ActionRow: View {
     let action: Action
     let opensLink: Bool
     var note: String?
+    var isDone = false
 
     var body: some View {
         HStack {
-            Image(systemName: action.kind.symbol)
-                .foregroundStyle(action.kind.tint)
+            Image(systemName: isDone ? "checkmark.circle.fill" : action.kind.symbol)
+                .foregroundStyle(isDone ? .secondary : action.kind.tint)
                 .font(.title3)
             VStack(alignment: .leading) {
-                Text(action.title).font(.headline)
+                Text(action.title)
+                    .font(.headline)
+                    .strikethrough(isDone)
+                    .foregroundStyle(isDone ? .secondary : .primary)
                 Text(action.detail).font(.subheadline).foregroundStyle(.secondary)
                 if let note {
                     Label(note, systemImage: "info.circle")
