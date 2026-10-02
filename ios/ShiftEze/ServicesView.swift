@@ -51,7 +51,8 @@ struct ServicesView: View {
                 NavigationLink {
                     ServiceDetailView(index: index)
                 } label: {
-                    ServiceRow(service: model.services[index])
+                    ServiceRow(service: model.services[index],
+                               paidUntil: model.paidUntil(model.services[index].name))
                 }
             }
         }
@@ -60,6 +61,8 @@ struct ServicesView: View {
 
 private struct ServiceRow: View {
     let service: Service
+    /// Set for a service the user cancelled that's still paid up.
+    var paidUntil: CalendarDate?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -70,6 +73,10 @@ private struct ServiceRow: View {
             }
             if service.current, let renews = service.renews {
                 Text("Renews on the \(renews.ordinal) · \(billing)")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else if let paidUntil {
+                Text("Cancelled · paid up until \(paidUntil.short)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
