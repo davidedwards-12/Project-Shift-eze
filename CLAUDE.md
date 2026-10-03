@@ -34,13 +34,17 @@ swift test --package-path ios/RotationEngine
 
 `ios/ShiftEze.xcodeproj` is the SwiftUI app (iOS 26, iPhone). It depends on
 the local package; the `ShiftEze/` folder is synced, so new files are picked
-up without editing the project. Tabs: Plan, Services, Watchlist. `AppModel`
+up without editing the project. Layout: `App/` (entry point, `AppModel`,
+config), `Features/<Plan|Services|Watchlist|Onboarding>/` (one folder per
+tab or flow, with its screens), `Notifications/`, `Support/` (formatting,
+theme) and `Resources/` (assets, sample data). New screens go in the
+matching feature folder. Tabs: Plan, Services, Watchlist. `AppModel`
 holds subscriptions, watchlist, budget and the Prime setting, saves on every
 change, and recomputes `RotationPlan` on every read.
 
 Saving lives in the package's `Persistence` target (tested by `swift test`):
 `SavedState` is written as JSON to Application Support/`state.json` with iOS
-file protection. First launch starts from `ShiftEze/SampleData/`. Out-of-range
+file protection. First launch starts from `ShiftEze/Resources/SampleData/`. Out-of-range
 values are fixed on load (`sanitized()`); a file that can't be read is moved
 to `state.damaged.json` and the app starts over with a notice. Watchlist
 entries have an `id` (defaulting to the title for older data); plans are
@@ -102,7 +106,7 @@ service's current price. The projected plan figure stays below as "This plan".
 `SavedState.init` has no default arguments on purpose: a new field must be
 passed explicitly so it can't be dropped when saving.
 
-App colors come from `ShiftEze/Theme.swift`: roles like `Theme.accent`,
+App colors come from `ShiftEze/Support/Theme.swift`: roles like `Theme.accent`,
 `Theme.background` and `Theme.gradient`, with values from `docs/BRAND.md`.
 Don't use raw hex in views. Screens don't use the theme yet; that's the
 design pass.
