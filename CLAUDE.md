@@ -89,7 +89,18 @@ via `SubscriptionChanges.apply`: a cancel makes the service not current (paid
 up until the renewal date), a start/restart makes it current, renewing on the
 day it was done. Each change is saved in `SavedState.changes` with the
 previous settings, so "Done recently" on the Plan tab can undo it; it's also
-the history actual savings will be worked out from (#25).
+the history actual savings are worked out from.
+
+Actual savings ("You've saved $X this year", top of the Plan tab) come from
+`ActualSavings.summary`: what the `Baseline` subscriptions would have charged
+on their billing days since `baseline.since`, minus what was really charged
+(current subscriptions rewound through `changes`), up to today. Rotated-in
+services count against savings. The baseline is a snapshot of current
+subscriptions taken when onboarding finishes (or on first launch for older
+installs) and is editable under "What you paid before". Charges use each
+service's current price. The projected plan figure stays below as "This plan".
+`SavedState.init` has no default arguments on purpose: a new field must be
+passed explicitly so it can't be dropped when saving.
 
 App colors come from `ShiftEze/Theme.swift`: roles like `Theme.accent`,
 `Theme.background` and `Theme.gradient`, with values from `docs/BRAND.md`.

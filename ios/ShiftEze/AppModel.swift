@@ -14,7 +14,15 @@ final class AppModel {
     var hasAmazonPrime: Bool { didSet { save() } }
     var budget: Cents { didSet { save() } }
     /// False until first-launch setup is finished or skipped.
-    var hasCompletedOnboarding: Bool { didSet { save() } }
+    var hasCompletedOnboarding: Bool {
+        didSet {
+            // Savings are counted from the moment setup is done.
+            if hasCompletedOnboarding, baseline == nil { takeBaseline() }
+            save()
+        }
+    }
+    /// What the user paid before the app; actual savings compare against it.
+    var baseline: Baseline? { didSet { save() } }
     /// Plan actions the user has done, oldest first.
     var changes: [SubscriptionChange] { didSet { save() } }
 
@@ -33,6 +41,7 @@ final class AppModel {
         budget = state.budget
         hasCompletedOnboarding = state.hasCompletedOnboarding
         changes = state.changes
+        baseline = state.baseline
         self.store = store
     }
 
@@ -41,7 +50,10 @@ final class AppModel {
     static func launch(store: Store = Store()) -> AppModel {
         switch store.load() {
         case .loaded(let state):
-            return AppModel(state: state, store: store)
+            let model = AppModel(state: state, store: store)
+            // Installs from before actual savings: start counting today.
+            if model.hasCompletedOnboarding, model.baseline == nil { model.takeBaseline() }
+            return model
         case .empty:
             let model = AppModel(state: .newUser, store: store)
             model.save()
@@ -63,8 +75,9 @@ final class AppModel {
         watchlist = sample.watchlist
         hasAmazonPrime = sample.hasAmazonPrime
         budget = sample.budget
-        hasCompletedOnboarding = true
         changes = []
+        baseline = nil
+        hasCompletedOnboarding = true  // takes a fresh baseline
     }
 
     /// For testing: show first-launch setup again, keeping current data.
@@ -74,7 +87,7 @@ final class AppModel {
 
     private var state: SavedState {
         SavedState(services: services, watchlist: watchlist, hasAmazonPrime: hasAmazonPrime,
-                   budget: budget, hasCompletedOnboarding: hasCompletedOnboarding, changes: changes)
+                   budget: budget, hasCompletedOnboarding: hasCompletedOnboarding, changes: changes, baseline: baseline)
     }
 
     private func save() {
@@ -130,6 +143,27 @@ final class AppModel {
         SubscriptionChanges.undo(change, in: &updated)
         services = updated
         changes.removeAll { $0.id == change.id }
+    }
+
+    // MARK: - Actual savings
+
+    /// Snapshot what the user pays for now, counting savings from today.
+    private func takeBaseline() {
+        baseline = Baseline(services: services, since: today)
+    }
+
+    /// Real savings so far, once there's a baseline.
+    var actualSavings: ActualSavings.Summary? {
+        baseline.map { ActualSavings.summary(baseline: $0, services: services, changes: changes, today: today) }
+    }
+
+    /// Include or leave out a service in "what you paid before", at its
+    /// current price and renewal day.
+    func setInBaseline(_ service: Service, _ included: Bool) {
+        guard var updated = baseline else { return }
+        updated.entries.removeAll { $0.service == service.name }
+        if included { updated.entries.append(Baseline.Entry(service: service)) }
+        baseline = updated
     }
 
     /// Changes from the last 30 days, newest first, for "Done recently".
@@ -248,7 +282,10 @@ extension SavedState {
             services: config.services,
             watchlist: watchlist.titles,
             hasAmazonPrime: config.memberships?["amazon_prime"] ?? false,
-            budget: 40_00
+            budget: 40_00,
+            hasCompletedOnboarding: true,
+            changes: [],
+            baseline: nil
         )
     }
 }

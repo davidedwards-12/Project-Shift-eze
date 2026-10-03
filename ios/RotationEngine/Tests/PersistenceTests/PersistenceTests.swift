@@ -15,7 +15,10 @@ let sampleState = SavedState(
     services: [Service(name: "Netflix", price: 2499, current: true, renews: 22, billedThrough: "Apple")],
     watchlist: [WatchlistEntry(id: "st", title: "Stranger Things", services: ["Netflix"])],
     hasAmazonPrime: true,
-    budget: 40_00
+    budget: 40_00,
+    hasCompletedOnboarding: true,
+    changes: [],
+    baseline: nil
 )
 
 @Suite struct StoreFile {
@@ -76,6 +79,16 @@ let sampleState = SavedState(
         try store.save(state)
         #expect(store.load() == .loaded(state))
         #expect(sampleState.changes.isEmpty)
+    }
+
+    @Test func baselineRoundTripsAndIsMissingInOlderFiles() throws {
+        var state = sampleState
+        #expect(state.baseline == nil)
+        state.baseline = Baseline(since: CalendarDate(2026, 10, 2),
+                                  entries: [.init(service: "Netflix", price: 2499, billingDay: 22)])
+        let store = tempStore()
+        try store.save(state)
+        #expect(store.load() == .loaded(state))
     }
 
     @Test func oldDoneActionsListIsIgnored() throws {
