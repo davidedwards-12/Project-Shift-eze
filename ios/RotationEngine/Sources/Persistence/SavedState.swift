@@ -15,14 +15,20 @@ public struct SavedState: Codable, Equatable, Sendable {
     public var hasCompletedOnboarding: Bool
     /// Plan actions the user has done, oldest first: what changed and when.
     public var changes: [SubscriptionChange]
+    /// What the user paid before the app, for actual savings. Nil until set
+    /// (when onboarding finishes, or first launch for older installs).
+    public var baseline: Baseline?
 
     public init(
         services: [Service],
         watchlist: [WatchlistEntry],
         hasAmazonPrime: Bool,
         budget: Cents,
-        hasCompletedOnboarding: Bool = true,
-        changes: [SubscriptionChange] = []
+        // No defaults on purpose: every field must be passed, so a new field
+        // can't be silently left out when saving (it happened once).
+        hasCompletedOnboarding: Bool,
+        changes: [SubscriptionChange],
+        baseline: Baseline?
     ) {
         self.services = services
         self.watchlist = watchlist
@@ -30,10 +36,11 @@ public struct SavedState: Codable, Equatable, Sendable {
         self.budget = budget
         self.hasCompletedOnboarding = hasCompletedOnboarding
         self.changes = changes
+        self.baseline = baseline
     }
 
     enum CodingKeys: String, CodingKey {
-        case version, services, watchlist, hasAmazonPrime, budget, hasCompletedOnboarding, changes
+        case version, services, watchlist, hasAmazonPrime, budget, hasCompletedOnboarding, changes, baseline
     }
 
     public init(from decoder: Decoder) throws {
@@ -48,6 +55,7 @@ public struct SavedState: Codable, Equatable, Sendable {
         // Files from before this existed may have a "doneActions" list; it only
         // hid reminders, so it's ignored.
         changes = try c.decodeIfPresent([SubscriptionChange].self, forKey: .changes) ?? []
+        baseline = try c.decodeIfPresent(Baseline.self, forKey: .baseline)
     }
 
     /// Fix values that would break planning or the screens: negative prices,

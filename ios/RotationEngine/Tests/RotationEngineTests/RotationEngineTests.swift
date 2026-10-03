@@ -483,3 +483,86 @@ func line(_ date: CalendarDate, _ title: String) -> String { "\(date) \(title)" 
         #expect(try JSONDecoder().decode(SubscriptionChange.self, from: JSONEncoder().encode(change)) == change)
     }
 }
+
+@Suite struct ActualSavingsRules {
+    // Netflix $24.99 renewing on the 22nd, Hulu $18.99 not subscribed.
+    static let netflix = Service(name: "Netflix", price: 2499, current: true, renews: 22, billedThrough: "Apple")
+    static let hulu = Service(name: "Hulu", price: 1899)
+    let oct1 = d(10, 1)
+
+    func change(_ kind: SubscriptionChange.Kind, _ service: String, done: CalendarDate, effective: CalendarDate,
+                was previous: SubscriptionChange.Previous) -> SubscriptionChange {
+        SubscriptionChange(id: "\(kind)-\(service)-\(effective)", kind: kind, service: service,
+                           doneOn: done, effectiveOn: effective, previous: previous)
+    }
+
+    @Test func baselineIsTheCurrentSubscriptions() {
+        let baseline = Baseline(services: [Self.netflix, Self.hulu], since: oct1)
+        #expect(baseline.entries == [.init(service: "Netflix", price: 2499, billingDay: 22)])
+        #expect(baseline.monthly == 2499)
+    }
+
+    @Test func nothingChangedMeansNothingSaved() {
+        let baseline = Baseline(services: [Self.netflix], since: oct1)
+        let summary = ActualSavings.summary(baseline: baseline, services: [Self.netflix], changes: [], today: d(12, 31))
+        #expect(summary.allTime == .init(withoutApp: 3 * 2499, actual: 3 * 2499))  // Oct 22, Nov 22, Dec 22
+        #expect(summary.allTime.saved == 0)
+    }
+
+    @Test func cancellingSavesEveryRenewalAfterIt() {
+        var netflix = Self.netflix
+        netflix.current = false
+        let cancelled = change(.cancelled, "Netflix", done: d(10, 20), effective: d(10, 22),
+                               was: .init(current: true, renews: 22, billedThrough: "Apple"))
+        let summary = ActualSavings.summary(baseline: Baseline(services: [Self.netflix], since: oct1),
+                                            services: [netflix], changes: [cancelled], today: d(12, 31))
+        #expect(summary.allTime.actual == 0)            // cancelled before its first renewal
+        #expect(summary.allTime.saved == 3 * 2499)
+        #expect(summary.thisMonth.saved == 2499)        // December
+    }
+
+    @Test func rotatedInServicesCountAgainstSavings() {
+        var hulu = Self.hulu
+        hulu.current = true
+        hulu.renews = 5
+        let started = change(.started, "Hulu", done: d(11, 5), effective: d(11, 5),
+                             was: .init(current: false, renews: nil, billedThrough: nil))
+        let summary = ActualSavings.summary(baseline: Baseline(services: [Self.netflix], since: oct1),
+                                            services: [Self.netflix, hulu], changes: [started], today: d(12, 31))
+        #expect(summary.allTime.actual == 3 * 2499 + 2 * 1899)  // Hulu Nov 5 and Dec 5
+        #expect(summary.allTime.saved == -2 * 1899)
+    }
+
+    @Test func cancelThenRestartChargesOnlyTheActiveMonths() {
+        var netflix = Self.netflix
+        netflix.renews = 3
+        let cancelled = change(.cancelled, "Netflix", done: d(10, 20), effective: d(10, 22),
+                               was: .init(current: true, renews: 22, billedThrough: "Apple"))
+        let restarted = change(.started, "Netflix", done: d(12, 3), effective: d(12, 3),
+                               was: .init(current: false, renews: 22, billedThrough: "Apple"))
+        let charges = ActualSavings.actualCharges(services: [netflix], changes: [cancelled, restarted],
+                                                  since: oct1, through: d(12, 31))
+        #expect(charges.map(\.date) == [d(12, 3)])  // nothing in Oct/Nov, then Dec 3
+    }
+
+    @Test func onlyChargesBetweenTheStartAndTodayCount() {
+        let baseline = Baseline(services: [Self.netflix], since: d(10, 23))  // just after an Oct 22 renewal
+        let summary = ActualSavings.summary(baseline: baseline, services: [Self.netflix], changes: [], today: d(11, 21))
+        #expect(summary.allTime.withoutApp == 0)  // next renewal Nov 22 hasn't happened yet
+    }
+
+    @Test func monthAndYearTotalsSplitByDate() {
+        let baseline = Baseline(services: [Self.netflix], since: d(11, 1))
+        let summary = ActualSavings.summary(baseline: baseline, services: [], changes: [], today: d(1, 31))
+        #expect(summary.allTime.withoutApp == 3 * 2499)   // Nov 22, Dec 22, Jan 22
+        #expect(summary.thisYear.withoutApp == 2499)      // 2027: Jan 22 only
+        #expect(summary.thisMonth.withoutApp == 2499)
+    }
+
+    @Test func billingDayIsClampedInShortMonths() {
+        let baseline = Baseline(since: CalendarDate(2027, 1, 1),
+                                entries: [.init(service: "X", price: 100, billingDay: 31)])
+        let dates = ActualSavings.baselineCharges(baseline, through: CalendarDate(2027, 3, 31)).map(\.date)
+        #expect(dates == [CalendarDate(2027, 1, 31), CalendarDate(2027, 2, 28), CalendarDate(2027, 3, 31)])
+    }
+}

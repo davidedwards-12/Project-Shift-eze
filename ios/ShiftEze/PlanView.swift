@@ -16,6 +16,9 @@ struct PlanView: View {
                         Button("OK") { model.storageNotice = nil }
                     }
                 }
+                if let actual = model.actualSavings, let baseline = model.baseline {
+                    ActualSavingsSection(summary: actual, baseline: baseline)
+                }
                 switch model.plan {
                 case .success(let plan) where plan.months.isEmpty:
                     // No paid months: savings would just be everything you pay
@@ -75,6 +78,73 @@ private struct EmptyPlanSection: View {
     }
 }
 
+/// Money actually saved so far: real charges vs. what the user paid before.
+private struct ActualSavingsSection: View {
+    let summary: ActualSavings.Summary
+    let baseline: Baseline
+
+    var body: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 6) {
+                let year = summary.thisYear.saved
+                if year >= 0 {
+                    Text("You've saved \(year.money)")
+                        .font(.largeTitle.bold())
+                        .foregroundStyle(.green)
+                } else {
+                    Text("\((-year).money) more than before")
+                        .font(.title.bold())
+                }
+                Text("this year").font(.headline)
+                HStack(spacing: 16) {
+                    LabeledContent("This month", value: summary.thisMonth.saved.money)
+                    LabeledContent("All time", value: summary.allTime.saved.money)
+                }
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize()
+            }
+            .padding(.vertical, 4)
+            NavigationLink {
+                BaselineView()
+            } label: {
+                LabeledContent("What you paid before", value: "\(baseline.monthly.money)/mo")
+            }
+        } header: {
+            Text("Your savings")
+        } footer: {
+            Text("Real charges since \(summary.since.short), compared with what your old subscriptions would have charged.")
+        }
+    }
+}
+
+/// Edit which subscriptions count as "what you paid before".
+private struct BaselineView: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(model.services, id: \.name) { service in
+                    Toggle(isOn: Binding(
+                        get: { model.baseline?.contains(service.name) ?? false },
+                        set: { model.setInBaseline(service, $0) }
+                    )) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(service.name)
+                            Text("\(service.price.money)/mo").font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            } footer: {
+                Text("The subscriptions you were paying for before you started rotating. Savings compare your real charges with what these would have cost, since \(model.baseline?.since.short ?? "today").")
+            }
+        }
+        .navigationTitle("What you paid before")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
 private struct SavingsSection: View {
     let savings: Savings
 
@@ -82,11 +152,11 @@ private struct SavingsSection: View {
         Section {
             VStack(alignment: .leading, spacing: 6) {
                 if savings.perMonth > 0 {
-                    Text("Save \(savings.perMonth.centsAsMoney)/mo")
-                        .font(.largeTitle.bold())
-                        .foregroundStyle(.green)
+                    Text("On track to save \(savings.perMonth.centsAsMoney)/mo")
+                        .font(.title2.bold())
                     Text("About \((savings.perMonth * 12).centsAsWholeDollars) a year")
                         .font(.headline)
+                        .foregroundStyle(.secondary)
                 } else {
                     Text("No savings with this plan")
                         .font(.title2.bold())
@@ -96,6 +166,8 @@ private struct SavingsSection: View {
                     .foregroundStyle(.secondary)
             }
             .padding(.vertical, 4)
+        } header: {
+            Text("This plan")
         } footer: {
             if savings.added.isEmpty {
                 Text("Projected from this plan.")
