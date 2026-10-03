@@ -15,8 +15,8 @@ final class AppModel {
     var budget: Cents { didSet { save() } }
     /// False until first-launch setup is finished or skipped.
     var hasCompletedOnboarding: Bool { didSet { save() } }
-    /// Ids of actions the user marked done; they stop being reminded
-    var doneActions: Set<String> { didSet { save() } }
+    /// Plan actions the user has done, oldest first.
+    var changes: [SubscriptionChange] { didSet { save() } }
 
     /// Shown once when saved data couldn't be read or written.
     var storageNotice: String?
@@ -32,7 +32,7 @@ final class AppModel {
         hasAmazonPrime = state.hasAmazonPrime
         budget = state.budget
         hasCompletedOnboarding = state.hasCompletedOnboarding
-        doneActions = Set(state.doneActions)
+        changes = state.changes
         self.store = store
     }
 
@@ -64,7 +64,7 @@ final class AppModel {
         hasAmazonPrime = sample.hasAmazonPrime
         budget = sample.budget
         hasCompletedOnboarding = true
-        doneActions = []
+        changes = []
     }
 
     /// For testing: show first-launch setup again, keeping current data.
@@ -74,7 +74,7 @@ final class AppModel {
 
     private var state: SavedState {
         SavedState(services: services, watchlist: watchlist, hasAmazonPrime: hasAmazonPrime,
-                   budget: budget, hasCompletedOnboarding: hasCompletedOnboarding, doneActions: doneActions.sorted())
+                   budget: budget, hasCompletedOnboarding: hasCompletedOnboarding, changes: changes)
     }
 
     private func save() {
@@ -110,11 +110,36 @@ final class AppModel {
     /// Notifications for the plan's upcoming actions
     var reminders: [Reminder] {
         guard case .success(let plan) = plan else { return [] }
-        return Reminders.make(plan: plan, today: today, done: doneActions)
+        return Reminders.make(plan: plan, today: today)
     }
-    
-    func setDone(_ action: Action, _ done: Bool) {
-        if done { doneActions.insert(action.id) } else { doneActions.remove(action.id) }
+
+    // MARK: - Done actions
+
+    /// The user did `action`: update their subscriptions to match (cancelled
+    /// or started) and keep a record so it can be undone. The plan, Services
+    /// tab and savings all follow.
+    func markDone(_ action: Action) {
+        var updated = services
+        guard let change = SubscriptionChanges.apply(action, on: today, to: &updated) else { return }
+        services = updated
+        changes.append(change)
+    }
+
+    func undo(_ change: SubscriptionChange) {
+        var updated = services
+        SubscriptionChanges.undo(change, in: &updated)
+        services = updated
+        changes.removeAll { $0.id == change.id }
+    }
+
+    /// Changes from the last 30 days, newest first, for "Done recently".
+    var recentChanges: [SubscriptionChange] {
+        changes.filter { $0.doneOn.days(to: today) <= 30 }.reversed()
+    }
+
+    /// When a cancelled service stops: shown while it's still paid up.
+    func paidUntil(_ service: String) -> CalendarDate? {
+        changes.last { $0.service == service && $0.kind == .cancelled && $0.effectiveOn >= today }?.effectiveOn
     }
     
     // MARK: - Availability

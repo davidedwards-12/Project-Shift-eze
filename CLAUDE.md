@@ -77,13 +77,19 @@ id (sample data) can't be refreshed.
 Reminders are local notifications only: no push, no server, nothing leaves
 the phone. `Reminders.make` (engine) picks what to remind and when: cancels 2
 days before the renewal (or today if sooner), starts and restarts on the day,
-no reminder for keeps, skipping past actions and ones the user marked done
-(`doneActions`, saved; swipe left on an action). `ReminderScheduler` (app)
+no reminder for keeps, skipping past actions. `ReminderScheduler` (app)
 turns them into notifications at 9am local time and reschedules whenever the
 plan changes; iOS allows 64 pending, so at most 60 are scheduled. Permission
 is asked once onboarding is done and there's something to remind about.
 `NotificationHandler` opens the cancel/restart page when one is tapped. Action
-ids (`cancel-Netflix-2026-10-22`) are stable, so "done" survives replanning.
+ids (`cancel-Netflix-2026-10-22`) are stable across launches.
+
+Marking an action done (swipe left → Done) changes the user's subscriptions
+via `SubscriptionChanges.apply`: a cancel makes the service not current (paid
+up until the renewal date), a start/restart makes it current, renewing on the
+day it was done. Each change is saved in `SavedState.changes` with the
+previous settings, so "Done recently" on the Plan tab can undo it; it's also
+the history actual savings will be worked out from (#25).
 
 App colors come from `ShiftEze/Theme.swift`: roles like `Theme.accent`,
 `Theme.background` and `Theme.gradient`, with values from `docs/BRAND.md`.

@@ -415,3 +415,71 @@ func line(_ date: CalendarDate, _ title: String) -> String { "\(date) \(title)" 
         #expect(CalendarDate(2026, 10, 2).adding(days: 0) == CalendarDate(2026, 10, 2))
     }
 }
+
+@Suite struct DoneActionsChangeSubscriptions {
+    static let services = [
+        Service(name: "Netflix", price: 2499, current: true, renews: 22, billedThrough: "Apple"),
+        Service(name: "Hulu", price: 1899),
+    ]
+    static let watchlist = [WatchlistEntry(title: "The Bear", services: ["Hulu"])]
+    let oct20 = d(10, 20)
+
+    func plan(_ services: [Service]) throws -> RotationPlan {
+        try RotationPlan.make(services: services, watchlist: Self.watchlist, budget: 4000, start: start, today: today)
+    }
+
+    func action(_ kind: Action.Kind, _ service: String, in plan: RotationPlan) throws -> Action {
+        try #require(plan.actions.first { $0.kind == kind && $0.service == service })
+    }
+
+    @Test func cancellingStopsTheServiceAndDropsTheAction() throws {
+        var services = Self.services
+        let cancel = try action(.cancel, "Netflix", in: plan(services))
+        let change = try #require(SubscriptionChanges.apply(cancel, on: oct20, to: &services))
+
+        #expect(change.kind == .cancelled && change.service == "Netflix")
+        #expect(change.doneOn == oct20 && change.effectiveOn == d(10, 22))
+        #expect(services[0].current == false)
+        let replanned = try plan(services)
+        #expect(!replanned.actions.contains { $0.service == "Netflix" })
+        #expect(replanned.savings.baseline == 0)  // no longer paying for it
+    }
+
+    @Test func startingMakesTheServiceCurrentFromToday() throws {
+        var services = Self.services
+        let startHulu = try action(.start, "Hulu", in: plan(services))
+        let change = try #require(SubscriptionChanges.apply(startHulu, on: oct20, to: &services))
+
+        #expect(change.kind == .started && change.effectiveOn == oct20)
+        #expect(services[1].current && services[1].renews == 20)
+        let replanned = try plan(services)
+        #expect(!replanned.actions.contains { $0.service == "Hulu" && $0.kind == .start })
+    }
+
+    @Test func undoRestoresTheSubscriptionButKeepsLaterEdits() throws {
+        var services = Self.services
+        let cancel = try action(.cancel, "Netflix", in: plan(services))
+        let change = try #require(SubscriptionChanges.apply(cancel, on: oct20, to: &services))
+        services[0].price = 1799  // edited after cancelling
+
+        SubscriptionChanges.undo(change, in: &services)
+        #expect(services[0].current && services[0].renews == 22 && services[0].billedThrough == "Apple")
+        #expect(services[0].price == 1799)
+    }
+
+    @Test func keepsAndUnknownServicesChangeNothing() {
+        var services = Self.services
+        let keep = Action(date: d(10, 22), kind: .keep, service: "Netflix", billedThrough: "Apple")
+        let unknown = Action(date: d(11, 1), kind: .start, service: "Peacock", billedThrough: "Peacock")
+        #expect(SubscriptionChanges.apply(keep, on: oct20, to: &services) == nil)
+        #expect(SubscriptionChanges.apply(unknown, on: oct20, to: &services) == nil)
+        #expect(services == Self.services)
+    }
+
+    @Test func changesRoundTripThroughJSON() throws {
+        var services = Self.services
+        let cancel = try action(.cancel, "Netflix", in: plan(services))
+        let change = try #require(SubscriptionChanges.apply(cancel, on: oct20, to: &services))
+        #expect(try JSONDecoder().decode(SubscriptionChange.self, from: JSONEncoder().encode(change)) == change)
+    }
+}

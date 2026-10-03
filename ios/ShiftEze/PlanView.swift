@@ -26,6 +26,7 @@ struct PlanView: View {
                         // Everything is free or included: cancelling is real advice.
                         ActionsSection(plan: plan)
                     }
+                    DoneSection()
                     ElsewhereSection(plan: plan, hasAmazonPrime: model.hasAmazonPrime)
                 case .success(let plan):
                     SavingsSection(savings: plan.savings)
@@ -34,6 +35,7 @@ struct PlanView: View {
                         MonthSection(plan: plan, index: index)
                     }
                     ActionsSection(plan: plan)
+                    DoneSection()
                     ElsewhereSection(plan: plan, hasAmazonPrime: model.hasAmazonPrime)
                 case .failure:
                     BudgetSection(budget: $model.budget)
@@ -161,30 +163,29 @@ private struct ActionsSection: View {
         Section {
             ForEach(plan.actions, id: \.self) { action in
                 let note = headsUp(for: action)
-                let done = model.doneActions.contains(action.id)
                 Group {
-                    if let link = action.iosLink ?? action.link, let url = URL(string: link), !done {
+                    if let link = action.iosLink ?? action.link, let url = URL(string: link) {
                         Button { open(url, fallback: action.link.flatMap(URL.init(string:))) } label: {
-                            ActionRow(action: action, opensLink: true, note: note, isDone: done)
+                            ActionRow(action: action, opensLink: true, note: note)
                         }
                         .buttonStyle(.plain)
                     } else {
-                        ActionRow(action: action, opensLink: false, note: done ? nil : note, isDone: done)
+                        ActionRow(action: action, opensLink: false, note: note)
                     }
                 }
                 .swipeActions {
                     if action.kind != .keep {
-                        Button(done ? "Undo" : "Done", systemImage: done ? "arrow.uturn.backward" : "checkmark") {
-                            model.setDone(action, !done)
+                        Button("Done", systemImage: "checkmark") {
+                            withAnimation { model.markDone(action) }
                         }
-                        .tint(done ? .gray : .green)
+                        .tint(.green)
                     }
                 }
             }
         } header: {
             Text("Upcoming actions")
         } footer: {
-            Text("We'll remind you before each one. Swipe left to mark it done.")
+            Text("We'll remind you before each one. Once you've done it, swipe left and tap Done to update your subscriptions.")
         }
     }
 
@@ -217,18 +218,14 @@ private struct ActionRow: View {
     let action: Action
     let opensLink: Bool
     var note: String?
-    var isDone = false
 
     var body: some View {
         HStack {
-            Image(systemName: isDone ? "checkmark.circle.fill" : action.kind.symbol)
-                .foregroundStyle(isDone ? .secondary : action.kind.tint)
+            Image(systemName: action.kind.symbol)
+                .foregroundStyle(action.kind.tint)
                 .font(.title3)
             VStack(alignment: .leading) {
-                Text(action.title)
-                    .font(.headline)
-                    .strikethrough(isDone)
-                    .foregroundStyle(isDone ? .secondary : .primary)
+                Text(action.title).font(.headline)
                 Text(action.detail).font(.subheadline).foregroundStyle(.secondary)
                 if let note {
                     Label(note, systemImage: "info.circle")
@@ -247,6 +244,58 @@ private struct ActionRow: View {
         }
         .contentShape(.rect)
         .accessibilityHint(opensLink ? "Opens where to \(action.kind.rawValue.lowercased()) it" : "")
+    }
+}
+
+/// Actions marked done in the last 30 days, with Undo.
+private struct DoneSection: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        let recent = model.recentChanges
+        if !recent.isEmpty {
+            Section {
+                ForEach(recent) { change in
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                            .font(.title3)
+                        VStack(alignment: .leading) {
+                            Text(change.title).font(.headline)
+                            Text(change.detail).font(.subheadline).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Text(change.doneOn.short).monospacedDigit().foregroundStyle(.secondary)
+                    }
+                    .swipeActions {
+                        Button("Undo", systemImage: "arrow.uturn.backward") {
+                            withAnimation { model.undo(change) }
+                        }
+                        .tint(.gray)
+                    }
+                }
+            } header: {
+                Text("Done recently")
+            } footer: {
+                Text("Swipe left to undo.")
+            }
+        }
+    }
+}
+
+extension SubscriptionChange {
+    var title: String {
+        switch kind {
+        case .cancelled: "Cancelled \(service)"
+        case .started: "Started \(service)"
+        }
+    }
+
+    var detail: String {
+        switch kind {
+        case .cancelled: "Paid up until \(effectiveOn.short)"
+        case .started: "Renews on the \(effectiveOn.day.ordinal)"
+        }
     }
 }
 

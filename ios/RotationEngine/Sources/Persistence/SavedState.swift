@@ -13,8 +13,8 @@ public struct SavedState: Codable, Equatable, Sendable {
     public var budget: Cents
     /// False until the user finishes or skips first-launch setup.
     public var hasCompletedOnboarding: Bool
-    /// Ids of actions the user marked done; they stop being reminded
-    public var doneActions: [String]
+    /// Plan actions the user has done, oldest first: what changed and when.
+    public var changes: [SubscriptionChange]
 
     public init(
         services: [Service],
@@ -22,18 +22,18 @@ public struct SavedState: Codable, Equatable, Sendable {
         hasAmazonPrime: Bool,
         budget: Cents,
         hasCompletedOnboarding: Bool = true,
-        doneActions: [String] = []
+        changes: [SubscriptionChange] = []
     ) {
         self.services = services
         self.watchlist = watchlist
         self.hasAmazonPrime = hasAmazonPrime
         self.budget = budget
         self.hasCompletedOnboarding = hasCompletedOnboarding
-        self.doneActions = doneActions
+        self.changes = changes
     }
 
     enum CodingKeys: String, CodingKey {
-        case version, services, watchlist, hasAmazonPrime, budget, hasCompletedOnboarding, doneActions
+        case version, services, watchlist, hasAmazonPrime, budget, hasCompletedOnboarding, changes
     }
 
     public init(from decoder: Decoder) throws {
@@ -45,7 +45,9 @@ public struct SavedState: Codable, Equatable, Sendable {
         budget = try c.decode(Cents.self, forKey: .budget)
         // Saved before onboarding existed: that user is already set up.
         hasCompletedOnboarding = try c.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding) ?? true
-        doneActions = try c.decodeIfPresent([String].self, forKey: .doneActions) ?? []
+        // Files from before this existed may have a "doneActions" list; it only
+        // hid reminders, so it's ignored.
+        changes = try c.decodeIfPresent([SubscriptionChange].self, forKey: .changes) ?? []
     }
 
     /// Fix values that would break planning or the screens: negative prices,

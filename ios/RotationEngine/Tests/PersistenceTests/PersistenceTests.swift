@@ -66,13 +66,26 @@ let sampleState = SavedState(
         #expect(state.hasCompletedOnboarding)
     }
 
-    @Test func doneActionsRoundTripAndDefaultToEmpty() throws {
+    @Test func changesRoundTripAndDefaultToEmpty() throws {
         var state = sampleState
-        state.doneActions = ["cancel-Netflix-2026-10-22"]
+        state.changes = [SubscriptionChange(
+            id: "cancel-Netflix-2026-10-22", kind: .cancelled, service: "Netflix",
+            doneOn: CalendarDate(2026, 10, 20), effectiveOn: CalendarDate(2026, 10, 22),
+            previous: .init(current: true, renews: 22, billedThrough: "Apple"))]
         let store = tempStore()
         try store.save(state)
         #expect(store.load() == .loaded(state))
-        #expect(sampleState.doneActions.isEmpty)
+        #expect(sampleState.changes.isEmpty)
+    }
+
+    @Test func oldDoneActionsListIsIgnored() throws {
+        let store = tempStore()
+        try store.save(sampleState)
+        var json = try JSONSerialization.jsonObject(with: Data(contentsOf: store.url)) as! [String: Any]
+        json.removeValue(forKey: "changes")
+        json["doneActions"] = ["cancel-Netflix-2026-10-22"]
+        try JSONSerialization.data(withJSONObject: json).write(to: store.url)
+        #expect(store.load() == .loaded(sampleState))
     }
 
     @Test func notOnboardedIsSavedAndLoaded() throws {
