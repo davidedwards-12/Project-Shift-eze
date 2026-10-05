@@ -21,31 +21,81 @@ jobs:
     name: Swift engine
     runs-on: xcode-27
     steps:
-      - uses: actions/checkout@v4
-      - run: sudo xcode-select -s "$XCODE_APP"
-      - run: swift --version
-      - run: swift test --package-path ios/RotationEngine
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Use Xcode 27.0
+        run: |
+          sudo xcode-select -s "$XCODE_APP"
+          swift --version
+
+      - name: Run engine, saving and TMDB tests (with coverage)
+        run: >
+          swift test --package-path ios/RotationEngine
+          --enable-code-coverage
+          --xunit-output "$RUNNER_TEMP/results.xml"
+
+      # Runs even when tests fail, so the summary shows what broke.
+      - name: Write test and coverage summary
+        if: always()
+        run: |
+          PKG=ios/RotationEngine
+          RESULTS="$RUNNER_TEMP/results-swift-testing.xml"
+          if [ ! -f "$RESULTS" ]; then
+            echo "## Swift package: ⚠️ tests didn't run. See the log above." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          BIN=$(swift build --package-path "$PKG" --show-bin-path)
+          PROFILE="$(dirname "$(swift test --package-path "$PKG" --show-codecov-path)")/default.profdata"
+          OBJECTS=()
+          for t in RotationEngineTests PersistenceTests TMDBTests; do
+            OBJECTS+=(-object "$BIN/$t.xctest/Contents/MacOS/$t")
+          done
+          # The three test targets run as separate binaries; merge them.
+          xcrun llvm-cov export -summary-only -instr-profile "$PROFILE" "${OBJECTS[@]:1}" \
+            -ignore-filename-regex='(\.build|Tests)/' > "$RUNNER_TEMP/coverage.json"
+          python3 .github/scripts/swift_summary.py "$RESULTS" "$RUNNER_TEMP/coverage.json" >> "$GITHUB_STEP_SUMMARY"
 
   app:
     name: iOS app build
     runs-on: xcode-27
     steps:
-      - uses: actions/checkout@v4
-      - run: sudo xcode-select -s "$XCODE_APP"
-      - run: xcodebuild -version
-      - run: >
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Use Xcode 27.0
+        run: |
+          sudo xcode-select -s "$XCODE_APP"
+          xcodebuild -version
+
+      - name: Build the app for the iOS Simulator
+        run: >
           xcodebuild build
           -project ios/ShiftEze.xcodeproj
           -scheme ShiftEze
           -destination 'generic/platform=iOS Simulator'
           CODE_SIGNING_ALLOWED=NO
 
+      - name: Write build summary
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "## iOS app: ✅ Built with $(xcodebuild -version | head -1)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "## iOS app: ❌ Build failed. See the log above." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   python:
     name: Python spike
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python -m unittest discover -v spikes/rotation
+
+      - name: Run prototype tests
+        run: python .github/scripts/python_tests.py "$GITHUB_STEP_SUMMARY"
