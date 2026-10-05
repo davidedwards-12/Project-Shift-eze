@@ -143,8 +143,11 @@ planning rules as the Swift tests.
 
 `.github/workflows/tests.yml` runs the Swift package tests, the app build and
 the Python spike tests on every PR and push to `master`; a newer push cancels
-the older run. The Mac jobs use the `xcode-27` runner image with Xcode pinned
-via `XCODE_APP` (the version the team builds with locally); upgrade it there
+the older run. Each run writes a summary on its page (tests per area, Swift
+line coverage per target and per file) via `.github/scripts/swift_summary.py`
+and `python_tests.py`; coverage is reported, not enforced. The Mac jobs use
+the `xcode-27` runner image with Xcode pinned via `XCODE_APP` (the version the
+team builds with locally); upgrade it there
 deliberately. `.github/workflows/links.yml` runs `spikes/check_links.py`
 every Monday and can be started by hand from the Actions tab. The TMDB key is
 never needed in CI.

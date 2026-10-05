@@ -1,5 +1,7 @@
 # Project Shift-eze
 
+[![Tests](https://github.com/davidedwards-12/Project-Shift-eze/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/davidedwards-12/Project-Shift-eze/actions/workflows/tests.yml)
+
 > **Tell us what you want to watch. We'll figure out what you need.**
 
 *Project Shift-eze is an internal codename. The consumer-facing name hasn't been chosen yet.*
