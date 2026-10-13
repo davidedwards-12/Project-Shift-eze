@@ -13,7 +13,8 @@ final.
 | Blue | `#3090F0` | Gradient transition |
 | Violet | `#7040F0` | End of gradient |
 | Purple | `#9050F0` | Secondary accent |
-| Deep Navy | `#050B18` | Background |
+| Deep Navy | `#050B18` | Background; text on the gradient |
+| Navy | `#101B30` | Cards and list rows on Deep Navy |
 | Off White | `#F5F7FA` | Primary text |
 
 ## Gradient

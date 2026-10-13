@@ -25,8 +25,11 @@ struct ShiftEzeApp: App {
                 Tab("Watchlist", systemImage: "list.bullet") { WatchlistView() }
             }
             .environment(model)
+            .tint(Theme.accent)
+            // The brand palette is built for a dark background.
+            .preferredColorScheme(.dark)
             .fullScreenCover(isPresented: showOnboarding) {
-                OnboardingView().environment(model)
+                OnboardingView().environment(model).tint(Theme.accent).preferredColorScheme(.dark)
             }
             // Keep streaming availability fresh: on launch and whenever the
             // app comes back to the foreground.

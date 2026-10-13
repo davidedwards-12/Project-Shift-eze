@@ -31,6 +31,8 @@ struct OnboardingView: View {
                 case .budget: BudgetStep()
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Theme.background)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if step != .welcome {
@@ -57,13 +59,13 @@ struct OnboardingView: View {
             .safeAreaInset(edge: .bottom) {
                 if step != .welcome {
                     Button(action: next) {
-                        Text(nextLabel).frame(maxWidth: .infinity)
+                        Text(nextLabel).primaryButtonLabel()
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     .padding()
                     // Solid backing so list text doesn't show through behind the button.
-                    .background(.bar)
+                    .background(Theme.background)
                 }
             }
             // Keep the button at the bottom, behind the keyboard, instead of
@@ -107,7 +109,7 @@ private struct WelcomeStep: View {
             Spacer()
             Image(systemName: "arrow.triangle.2.circlepath")
                 .font(.system(size: 64, weight: .semibold))
-                .foregroundStyle(.tint)
+                .foregroundStyle(Theme.gradient)
                 .accessibilityHidden(true)
             Text("Pay only for the streaming you watch")
                 .font(.largeTitle.bold())
@@ -117,7 +119,7 @@ private struct WelcomeStep: View {
                 .foregroundStyle(.secondary)
             Spacer()
             Button(action: start) {
-                Text("Get started").frame(maxWidth: .infinity)
+                Text("Get started").primaryButtonLabel()
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
@@ -134,26 +136,30 @@ private struct SubscriptionsStep: View {
     var body: some View {
         @Bindable var model = model
         List {
-            Section {
-                Toggle("Amazon Prime", isOn: $model.hasAmazonPrime)
-            } header: {
-                Text("Memberships")
-            } footer: {
-                Text("Prime includes Prime Video at no extra cost.")
-            }
-            Section {
-                ForEach(model.services.indices, id: \.self) { index in
-                    ServiceSetupRow(
-                        service: $model.services[index],
-                        includedWithPrime: model.hasAmazonPrime && model.services[index].includedWith == "amazon_prime"
-                    )
+            Group {
+                Section {
+                    Toggle("Amazon Prime", isOn: $model.hasAmazonPrime)
+                } header: {
+                    Text("Memberships")
+                } footer: {
+                    Text("Prime includes Prime Video at no extra cost.")
                 }
-            } header: {
-                Text("Which do you pay for now?")
-            } footer: {
-                Text(BillingFields.hint)
+                Section {
+                    ForEach(model.services.indices, id: \.self) { index in
+                        ServiceSetupRow(
+                            service: $model.services[index],
+                            includedWithPrime: model.hasAmazonPrime && model.services[index].includedWith == "amazon_prime"
+                        )
+                    }
+                } header: {
+                    Text("Which do you pay for now?")
+                } footer: {
+                    Text(BillingFields.hint)
+                }
             }
+            .themedRows()
         }
+        .themedList()
     }
 }
 
@@ -209,24 +215,29 @@ private struct BudgetStep: View {
     var body: some View {
         @Bindable var model = model
         List {
-            Section {
-                VStack(spacing: 8) {
-                    Text(model.budget.money)
-                        .font(.system(size: 48, weight: .bold))
-                        .monospacedDigit()
-                    Stepper("Monthly budget", value: $model.budget, in: 5_00...200_00, step: 5_00)
-                        .labelsHidden()
+            Group {
+                Section {
+                    VStack(spacing: 8) {
+                        Text(model.budget.money)
+                            .font(.system(size: 48, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundStyle(Theme.highlight)
+                        Stepper("Monthly budget", value: $model.budget, in: 5_00...200_00, step: 5_00)
+                            .labelsHidden()
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                } footer: {
+                    Text("The most you want to spend on streaming in any month.")
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-            } footer: {
-                Text("The most you want to spend on streaming in any month.")
+                Section {
+                    LabeledContent("You pay now", value: "\(payingNow.money)/mo")
+                    preview
+                }
             }
-            Section {
-                LabeledContent("You pay now", value: "\(payingNow.money)/mo")
-                preview
-            }
+            .themedRows()
         }
+        .themedList()
     }
 
     private var payingNow: Cents {

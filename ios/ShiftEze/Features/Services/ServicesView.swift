@@ -10,16 +10,20 @@ struct ServicesView: View {
         @Bindable var model = model
         NavigationStack {
             List {
-                Section {
-                    Toggle("Amazon Prime", isOn: $model.hasAmazonPrime)
-                } header: {
-                    Text("Memberships")
-                } footer: {
-                    Text("Prime members get Prime Video at no extra cost, so it's never rotated.")
+                Group {
+                    Section {
+                        Toggle("Amazon Prime", isOn: $model.hasAmazonPrime)
+                    } header: {
+                        Text("Memberships")
+                    } footer: {
+                        Text("Prime members get Prime Video at no extra cost, so it's never rotated.")
+                    }
+                    serviceSection("Paying for now", current: true)
+                    serviceSection("Not subscribed", current: false)
                 }
-                serviceSection("Paying for now", current: true)
-                serviceSection("Not subscribed", current: false)
+                .themedRows()
             }
+            .themedList()
             .navigationTitle("Services")
             .toolbar {
                 Menu {
@@ -98,18 +102,22 @@ struct ServiceDetailView: View {
         @Bindable var model = model
         let service = $model.services[index]
         Form {
-            Section {
-                Toggle("I pay for this now", isOn: service.current)
-                PriceField(price: service.price)
-            }
-            if service.wrappedValue.current {
+            Group {
                 Section {
-                    BillingFields(service: service)
-                } footer: {
-                    Text(BillingFields.hint)
+                    Toggle("I pay for this now", isOn: service.current)
+                    PriceField(price: service.price)
+                }
+                if service.wrappedValue.current {
+                    Section {
+                        BillingFields(service: service)
+                    } footer: {
+                        Text(BillingFields.hint)
+                    }
                 }
             }
+            .themedRows()
         }
+        .themedList()
         .navigationTitle(service.wrappedValue.name)
     }
 }

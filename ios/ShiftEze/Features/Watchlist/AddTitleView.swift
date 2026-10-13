@@ -55,6 +55,8 @@ struct TitleSearchView: View {
                 resultsList
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Theme.background)
         // A plain field rather than .searchable: the system search bar
         // hides the title and Done while it's active, which looked like a
         // second sheet opening.
@@ -76,34 +78,38 @@ struct TitleSearchView: View {
 
     private var resultsList: some View {
         List {
-            switch status {
-            case .searching where results.isEmpty:
-                Section { ProgressView().frame(maxWidth: .infinity) }
-            case .done where results.isEmpty:
-                ContentUnavailableView.search(text: query)
-            case .failed(let message):
-                Section { Label(message, systemImage: "exclamationmark.triangle") }
-            default:
-                EmptyView()
-            }
+            Group {
+                switch status {
+                case .searching where results.isEmpty:
+                    Section { ProgressView().frame(maxWidth: .infinity) }
+                case .done where results.isEmpty:
+                    ContentUnavailableView.search(text: query)
+                case .failed(let message):
+                    Section { Label(message, systemImage: "exclamationmark.triangle") }
+                default:
+                    EmptyView()
+                }
 
-            if !results.isEmpty {
-                Section {
-                    ForEach(results) { result in
-                        ResultRow(
-                            result: result,
-                            onWatchlist: model.watchlist.contains { $0.id == result.id },
-                            isAdding: adding == result.id
-                        ) {
-                            Task { await toggle(result) }
+                if !results.isEmpty {
+                    Section {
+                        ForEach(results) { result in
+                            ResultRow(
+                                result: result,
+                                onWatchlist: model.watchlist.contains { $0.id == result.id },
+                                isAdding: adding == result.id
+                            ) {
+                                Task { await toggle(result) }
+                            }
+                            .disabled(adding != nil)
                         }
-                        .disabled(adding != nil)
+                    } footer: {
+                        Text("Search by TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB. Streaming availability from JustWatch.")
                     }
-                } footer: {
-                    Text("Search by TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB. Streaming availability from JustWatch.")
                 }
             }
+            .themedRows()
         }
+        .themedList()
         .scrollDismissesKeyboard(.immediately)
     }
 
@@ -175,7 +181,7 @@ private struct SearchField: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(.fill.tertiary, in: .capsule)
+        .background(Theme.surface, in: .capsule)
     }
 }
 
@@ -204,7 +210,7 @@ private struct ResultRow: View {
                 }
                 Spacer()
                 if onWatchlist {
-                    Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                    Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.highlight)
                         .accessibilityLabel("On your watchlist. Tap to remove.")
                 } else if isAdding {
                     ProgressView()

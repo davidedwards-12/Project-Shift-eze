@@ -16,64 +16,68 @@ struct TitleDetailView: View {
     var body: some View {
         if let title {
             List {
-                Section {
-                    let listed = (title.services + title.notOn).sorted()
-                    if listed.isEmpty {
-                        Text("Not on any service we track").foregroundStyle(.secondary)
+                Group {
+                    Section {
+                        let listed = (title.services + title.notOn).sorted()
+                        if listed.isEmpty {
+                            Text("Not on any service we track").foregroundStyle(.secondary)
+                        }
+                        ForEach(listed, id: \.self) { service in
+                            ServiceAvailabilityRow(
+                                service: service,
+                                isNotOn: title.notOn.contains(service),
+                                toggle: { model.setNotOn(service, !title.notOn.contains(service), titleID: id) }
+                            )
+                        }
+                    } header: {
+                        Text("Streaming on")
+                    } footer: {
+                        Text("Tap \"Not there?\" if you checked and it isn't on that service. We'll plan around it.")
                     }
-                    ForEach(listed, id: \.self) { service in
-                        ServiceAvailabilityRow(
-                            service: service,
-                            isNotOn: title.notOn.contains(service),
-                            toggle: { model.setNotOn(service, !title.notOn.contains(service), titleID: id) }
-                        )
-                    }
-                } header: {
-                    Text("Streaming on")
-                } footer: {
-                    Text("Tap \"Not there?\" if you checked and it isn't on that service. We'll plan around it.")
-                }
 
-                if !title.free.isEmpty || !title.library.isEmpty {
-                    Section("Free") {
-                        if !title.free.isEmpty {
-                            LabeledContent("With ads", value: title.free.formatted())
-                        }
-                        if !title.library.isEmpty {
-                            LabeledContent("With a library card", value: title.library.formatted())
+                    if !title.free.isEmpty || !title.library.isEmpty {
+                        Section("Free") {
+                            if !title.free.isEmpty {
+                                LabeledContent("With ads", value: title.free.formatted())
+                            }
+                            if !title.library.isEmpty {
+                                LabeledContent("With a library card", value: title.library.formatted())
+                            }
                         }
                     }
-                }
 
-                Section {
-                    LabeledContent("Last checked", value: title.checkedOn?.short ?? "Never")
-                    if fromTMDB {
-                        let checking = model.refreshing.contains(id)
-                        Button {
-                            checkResult = nil
-                            Task {
-                                checkResult = await model.checkNow(id)
-                                checkedAt = .now
+                    Section {
+                        LabeledContent("Last checked", value: title.checkedOn?.short ?? "Never")
+                        if fromTMDB {
+                            let checking = model.refreshing.contains(id)
+                            Button {
+                                checkResult = nil
+                                Task {
+                                    checkResult = await model.checkNow(id)
+                                    checkedAt = .now
+                                }
+                            } label: {
+                                HStack {
+                                    Text(checking ? "Checking…" : "Check again now")
+                                    Spacer()
+                                    if checking { ProgressView() }
+                                }
+                                .contentShape(.rect)
                             }
-                        } label: {
-                            HStack {
-                                Text(checking ? "Checking…" : "Check again now")
-                                Spacer()
-                                if checking { ProgressView() }
+                            .disabled(checking || AppConfig.tmdbClient == nil)
+                            if let checkResult, let checkedAt, !checking {
+                                CheckResultRow(result: checkResult, at: checkedAt)
                             }
-                            .contentShape(.rect)
                         }
-                        .disabled(checking || AppConfig.tmdbClient == nil)
-                        if let checkResult, let checkedAt, !checking {
-                            CheckResultRow(result: checkResult, at: checkedAt)
-                        }
+                    } footer: {
+                        Text(fromTMDB
+                             ? "Streaming availability from JustWatch via TMDB. It's sometimes wrong or out of date, so we re-check it every week, and daily before you're due to subscribe for it."
+                             : "This title was added from sample data, so it can't be re-checked. Remove it and add it again with + to get live availability.")
                     }
-                } footer: {
-                    Text(fromTMDB
-                         ? "Streaming availability from JustWatch via TMDB. It's sometimes wrong or out of date, so we re-check it every week, and daily before you're due to subscribe for it."
-                         : "This title was added from sample data, so it can't be re-checked. Remove it and add it again with + to get live availability.")
                 }
+                .themedRows()
             }
+            .themedList()
             .navigationTitle(title.name)
             .navigationBarTitleDisplayMode(.inline)
         } else {
@@ -93,10 +97,10 @@ private struct CheckResultRow: View {
         switch result {
         case .unchanged:
             Label("Up to date as of \(time). Nothing has changed.", systemImage: "checkmark.circle")
-                .foregroundStyle(.green)
+                .foregroundStyle(Theme.highlight)
         case .changed:
             Label("Updated at \(time). Where it streams has changed.", systemImage: "arrow.triangle.2.circlepath")
-                .foregroundStyle(.blue)
+                .foregroundStyle(Theme.accent)
         case .failed(let message):
             Label(message, systemImage: "exclamationmark.triangle")
                 .foregroundStyle(.orange)
