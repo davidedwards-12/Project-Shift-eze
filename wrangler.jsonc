@@ -1,0 +1,11 @@
+// Cloudflare deploys the website with `npx wrangler deploy` from the top of
+// the repo (no root directory set in the dashboard). Only what's in
+// site/public/ is served.
+{
+  // Must match the Worker's name in the Cloudflare dashboard.
+  "name": "flixshift",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./site/public"
+  }
+}
