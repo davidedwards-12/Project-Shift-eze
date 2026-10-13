@@ -124,6 +124,16 @@ it only understands `#`/`###` headings, `-` bullets and inline Markdown. The
 policy must be updated before any change to what leaves the phone ships (for
 example moving TMDB calls to a server).
 
+`site/` is the public website for `flixshift.app`, deployed by Cloudflare
+(set up by Dave) with `npx wrangler deploy` from `site/` on every push to
+`master`; `site/wrangler.jsonc` says to serve `site/public/`. It's plain HTML
+and CSS: no JavaScript, no tracking, no outside requests, with security
+headers in `public/_headers`. `public/privacy/index.html` is generated from
+the app's `PrivacyPolicy.md` by `python3 site/build.py`; rerun it after
+editing the policy (CI fails if it's out of date). Preview with
+`python3 -m http.server --directory site/public`. The contact address everywhere is
+`support@flixshift.app`.
+
 The display name is "FlixShift" and the bundle ID is `com.doubled.flixshift`
 (DoubleD is Dave and Daniel). The Xcode project, target and source folder are
 still named `ShiftEze`; that's internal and users never see it. The codename
@@ -163,7 +173,8 @@ and `python_tests.py`; coverage is reported, not enforced. The Mac jobs use
 the `xcode-27` runner image with Xcode pinned via `XCODE_APP` (the version the
 team builds with locally); upgrade it there
 deliberately. `.github/workflows/links.yml` runs `spikes/check_links.py`
-every Monday and can be started by hand from the Actions tab. The TMDB key is
+every Monday and can be started by hand from the Actions tab. The Python job also
+checks the website's privacy page is up to date with the app's policy. The TMDB key is
 never needed in CI.
 
 ## Hard rules
