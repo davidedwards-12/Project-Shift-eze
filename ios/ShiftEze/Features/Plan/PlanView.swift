@@ -9,48 +9,52 @@ struct PlanView: View {
         @Bindable var model = model
         NavigationStack {
             List {
-                if let notice = model.storageNotice {
-                    Section {
-                        Label(notice, systemImage: "exclamationmark.triangle")
-                            .font(.subheadline)
-                        Button("OK") { model.storageNotice = nil }
+                Group {
+                    if let notice = model.storageNotice {
+                        Section {
+                            Label(notice, systemImage: "exclamationmark.triangle")
+                                .font(.subheadline)
+                            Button("OK") { model.storageNotice = nil }
+                        }
                     }
-                }
-                if let actual = model.actualSavings, let baseline = model.baseline {
-                    ActualSavingsSection(summary: actual, baseline: baseline)
-                }
-                switch model.plan {
-                case .success(let plan) where plan.months.isEmpty:
-                    // No paid months: savings would just be everything you pay
-                    // now, so don't show a number.
-                    EmptyPlanSection(watchlistIsEmpty: model.watchlist.isEmpty)
-                    BudgetSection(budget: $model.budget)
-                    if !model.watchlist.isEmpty {
-                        // Everything is free or included: cancelling is real advice.
+                    if let actual = model.actualSavings, let baseline = model.baseline {
+                        ActualSavingsSection(summary: actual, baseline: baseline)
+                    }
+                    switch model.plan {
+                    case .success(let plan) where plan.months.isEmpty:
+                        // No paid months: savings would just be everything you pay
+                        // now, so don't show a number.
+                        EmptyPlanSection(watchlistIsEmpty: model.watchlist.isEmpty)
+                        BudgetSection(budget: $model.budget)
+                        if !model.watchlist.isEmpty {
+                            // Everything is free or included: cancelling is real advice.
+                            ActionsSection(plan: plan)
+                        }
+                        DoneSection()
+                        ElsewhereSection(plan: plan, hasAmazonPrime: model.hasAmazonPrime)
+                    case .success(let plan):
+                        SavingsSection(savings: plan.savings)
+                        BudgetSection(budget: $model.budget)
+                        ForEach(plan.months.indices, id: \.self) { index in
+                            MonthSection(plan: plan, index: index)
+                        }
                         ActionsSection(plan: plan)
-                    }
-                    DoneSection()
-                    ElsewhereSection(plan: plan, hasAmazonPrime: model.hasAmazonPrime)
-                case .success(let plan):
-                    SavingsSection(savings: plan.savings)
-                    BudgetSection(budget: $model.budget)
-                    ForEach(plan.months.indices, id: \.self) { index in
-                        MonthSection(plan: plan, index: index)
-                    }
-                    ActionsSection(plan: plan)
-                    DoneSection()
-                    ElsewhereSection(plan: plan, hasAmazonPrime: model.hasAmazonPrime)
-                case .failure:
-                    BudgetSection(budget: $model.budget)
-                    Section {
-                        ContentUnavailableView(
-                            "Budget too low",
-                            systemImage: "exclamationmark.triangle",
-                            description: Text("Something on your watchlist is only on a service that costs more than your monthly budget.")
-                        )
+                        DoneSection()
+                        ElsewhereSection(plan: plan, hasAmazonPrime: model.hasAmazonPrime)
+                    case .failure:
+                        BudgetSection(budget: $model.budget)
+                        Section {
+                            ContentUnavailableView(
+                                "Budget too low",
+                                systemImage: "exclamationmark.triangle",
+                                description: Text("Something on your watchlist is only on a service that costs more than your monthly budget.")
+                            )
+                        }
                     }
                 }
+                .themedRows()
             }
+            .themedList()
             .navigationTitle("Your plan")
         }
     }
@@ -85,26 +89,28 @@ private struct ActualSavingsSection: View {
 
     var body: some View {
         Section {
-            VStack(alignment: .leading, spacing: 6) {
-                let year = summary.thisYear.saved
-                if year >= 0 {
-                    Text("You've saved \(year.money)")
-                        .font(.largeTitle.bold())
-                        .foregroundStyle(.green)
-                } else {
-                    Text("\((-year).money) more than before")
-                        .font(.title.bold())
-                }
-                Text("this year").font(.headline)
-                HStack(spacing: 16) {
-                    LabeledContent("This month", value: summary.thisMonth.saved.money)
-                    LabeledContent("All time", value: summary.allTime.saved.money)
-                }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .fixedSize()
+            let year = summary.thisYear.saved
+            // The gradient is for good news only.
+            let hero = year >= 0
+            VStack(alignment: .leading, spacing: 4) {
+                Text(hero ? "You've saved" : "You've spent")
+                    .font(.headline)
+                Text(hero ? year.money : (-year).money)
+                    .font(.system(size: 52, weight: .bold, design: .rounded))
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
+                Text(hero ? "this year" : "more than before this year")
+                    .font(.headline)
+                Text("This month \(summary.thisMonth.saved.money) · All time \(summary.allTime.saved.money)")
+                    .font(.subheadline.weight(.medium))
+                    .opacity(0.75)
+                    .padding(.top, 8)
             }
-            .padding(.vertical, 4)
+            .foregroundStyle(hero ? Theme.onGradient : Theme.text)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 12)
+            .accessibilityElement(children: .combine)
+            .listRowBackground(Rectangle().fill(hero ? AnyShapeStyle(Theme.gradient) : AnyShapeStyle(Theme.surface)))
             NavigationLink {
                 BaselineView()
             } label: {
@@ -124,22 +130,26 @@ private struct BaselineView: View {
 
     var body: some View {
         List {
-            Section {
-                ForEach(model.services, id: \.name) { service in
-                    Toggle(isOn: Binding(
-                        get: { model.baseline?.contains(service.name) ?? false },
-                        set: { model.setInBaseline(service, $0) }
-                    )) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(service.name)
-                            Text("\(service.price.money)/mo").font(.caption).foregroundStyle(.secondary)
+            Group {
+                Section {
+                    ForEach(model.services, id: \.name) { service in
+                        Toggle(isOn: Binding(
+                            get: { model.baseline?.contains(service.name) ?? false },
+                            set: { model.setInBaseline(service, $0) }
+                        )) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(service.name)
+                                Text("\(service.price.money)/mo").font(.caption).foregroundStyle(.secondary)
+                            }
                         }
                     }
+                } footer: {
+                    Text("The subscriptions you were paying for before you started rotating. Savings compare your real charges with what these would have cost, since \(model.baseline?.since.short ?? "today").")
                 }
-            } footer: {
-                Text("The subscriptions you were paying for before you started rotating. Savings compare your real charges with what these would have cost, since \(model.baseline?.since.short ?? "today").")
             }
+            .themedRows()
         }
+        .themedList()
         .navigationTitle("What you paid before")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -154,6 +164,7 @@ private struct SavingsSection: View {
                 if savings.perMonth > 0 {
                     Text("On track to save \(savings.perMonth.centsAsMoney)/mo")
                         .font(.title2.bold())
+                        .foregroundStyle(Theme.highlight)
                     Text("About \((savings.perMonth * 12).centsAsWholeDollars) a year")
                         .font(.headline)
                         .foregroundStyle(.secondary)
@@ -220,7 +231,7 @@ private struct MonthSection: View {
             HStack {
                 Text(plan.date(ofMonth: index).monthAndYear)
                 Spacer()
-                Text(month.total.money)
+                Text(month.total.money).foregroundStyle(Theme.highlight)
             }
         }
     }
@@ -250,7 +261,7 @@ private struct ActionsSection: View {
                         Button("Done", systemImage: "checkmark") {
                             withAnimation { model.markDone(action) }
                         }
-                        .tint(.green)
+                        .tint(Theme.Palette.violet)
                     }
                 }
             }
@@ -441,9 +452,9 @@ extension Action.Kind {
 
     var tint: Color {
         switch self {
-        case .keep: .blue
-        case .cancel: .red
-        case .restart, .start: .green
+        case .keep: Theme.Palette.blue
+        case .cancel: Theme.accentSecondary
+        case .restart, .start: Theme.highlight
         }
     }
 }

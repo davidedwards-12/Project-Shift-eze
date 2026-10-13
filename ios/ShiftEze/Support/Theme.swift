@@ -10,7 +10,11 @@ enum Theme {
     /// Small highlights, e.g. a savings figure.
     static let highlight = Palette.mint
     static let background = Palette.deepNavy
+    /// Cards and list rows: one step lighter than the background.
+    static let surface = Palette.navy
     static let text = Palette.offWhite
+    /// Text and icons sitting on the gradient.
+    static let onGradient = Palette.deepNavy
 
     /// Mint → Teal → Cyan → Blue → Violet, top-left to bottom-right. For hero
     /// elements only (the savings card, the app icon), not every surface.
@@ -31,6 +35,7 @@ enum Theme {
         static let violet = Color(hex: 0x7040F0)
         static let purple = Color(hex: 0x9050F0)
         static let deepNavy = Color(hex: 0x050B18)
+        static let navy = Color(hex: 0x101B30)
         static let offWhite = Color(hex: 0xF5F7FA)
     }
 }
@@ -44,6 +49,26 @@ extension Color {
             green: Double((hex >> 8) & 0xFF) / 255,
             blue: Double(hex & 0xFF) / 255
         )
+    }
+}
+
+extension View {
+    /// The app's list look: brand background, with rows on `Theme.surface`.
+    /// Put it on a `List`, and `themedRows()` on what's inside it.
+    func themedList() -> some View {
+        scrollContentBackground(.hidden).background(Theme.background)
+    }
+
+    func themedRows() -> some View {
+        listRowBackground(Theme.surface)
+    }
+
+    /// The label of a full-width `.borderedProminent` button: dark text,
+    /// because white is hard to read on the accent color.
+    func primaryButtonLabel() -> some View {
+        fontWeight(.semibold)
+            .foregroundStyle(Theme.onGradient)
+            .frame(maxWidth: .infinity)
     }
 }
 

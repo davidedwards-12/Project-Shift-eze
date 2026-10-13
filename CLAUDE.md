@@ -109,8 +109,12 @@ passed explicitly so it can't be dropped when saving.
 
 App colors come from `ShiftEze/Support/Theme.swift`: roles like `Theme.accent`,
 `Theme.background` and `Theme.gradient`, with values from `docs/BRAND.md`.
-Don't use raw hex in views. Screens don't use the theme yet; that's the
-design pass.
+Don't use raw hex in views. The app is dark only. Every `List`/`Form` gets
+`.themedList()` with its contents wrapped in a `Group` carrying
+`.themedRows()`; full-width `.borderedProminent` buttons use
+`.primaryButtonLabel()` on their label. The gradient is for hero elements
+(the savings card, the app icon). The app icon is a placeholder until there's
+a logo.
 
 The display name is "FlixShift" and the bundle ID is `com.doubled.flixshift`
 (DoubleD is Dave and Daniel). The Xcode project, target and source folder are

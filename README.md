@@ -14,7 +14,7 @@ This is a subscription **optimizer**, not just a subscription tracker.
 
 ## Early build
 
-An early version of the iOS app, shown with sample data. The look is a placeholder until the design pass.
+An early version of the iOS app, shown with sample data.
 
 | Plan | Upcoming actions | Services | Watchlist |
 | --- | --- | --- | --- |
