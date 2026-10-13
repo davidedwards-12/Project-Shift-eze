@@ -125,8 +125,9 @@ policy must be updated before any change to what leaves the phone ships (for
 example moving TMDB calls to a server).
 
 `site/` is the public website for `flixshift.app`, deployed by Cloudflare
-(set up by Dave) with `npx wrangler deploy` from `site/` on every push to
-`master`; `site/wrangler.jsonc` says to serve `site/public/`. It's plain HTML
+(set up by Dave) with `npx wrangler deploy` from the top of the repo on every
+push to `master`; `wrangler.jsonc` says to serve `site/public/`. The Worker
+has no root directory set in Cloudflare; keep it that way. It's plain HTML
 and CSS: no JavaScript, no tracking, no outside requests, with security
 headers in `public/_headers`. `public/privacy/index.html` is generated from
 the app's `PrivacyPolicy.md` by `python3 site/build.py`; rerun it after
