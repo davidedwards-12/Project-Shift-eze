@@ -36,7 +36,7 @@ swift test --package-path ios/RotationEngine
 `ios/ShiftEze.xcodeproj` is the SwiftUI app (iOS 26, iPhone). It depends on
 the local package; the `ShiftEze/` folder is synced, so new files are picked
 up without editing the project. Layout: `App/` (entry point, `AppModel`,
-config), `Features/<Plan|Services|Watchlist|Onboarding>/` (one folder per
+config), `Features/<Plan|Services|Watchlist|Onboarding|About>/` (one folder per
 tab or flow, with its screens), `Notifications/`, `Support/` (formatting,
 theme) and `Resources/` (assets, sample data). New screens go in the
 matching feature folder. Tabs: Plan, Services, Watchlist. `AppModel`
@@ -115,6 +115,14 @@ Don't use raw hex in views. The app is dark only. Every `List`/`Form` gets
 `.primaryButtonLabel()` on their label. The gradient is for hero elements
 (the savings card, the app icon). The app icon is a placeholder until there's
 a logo.
+
+The ⓘ button on the Plan tab opens `AboutView` (`Features/About/`): version,
+a short privacy summary, the TMDB and JustWatch credits their terms require,
+and the contact address. The full policy is `Resources/PrivacyPolicy.md`,
+bundled and shown by `PrivacyPolicyView`, so there's one copy of the wording;
+it only understands `#`/`###` headings, `-` bullets and inline Markdown. The
+policy must be updated before any change to what leaves the phone ships (for
+example moving TMDB calls to a server).
 
 The display name is "FlixShift" and the bundle ID is `com.doubled.flixshift`
 (DoubleD is Dave and Daniel). The Xcode project, target and source folder are

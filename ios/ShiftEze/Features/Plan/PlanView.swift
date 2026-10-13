@@ -56,6 +56,15 @@ struct PlanView: View {
             }
             .themedList()
             .navigationTitle("Your plan")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        AboutView()
+                    } label: {
+                        Label("About", systemImage: "info.circle")
+                    }
+                }
+            }
         }
     }
 }
