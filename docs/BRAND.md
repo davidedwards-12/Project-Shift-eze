@@ -1,6 +1,7 @@
 # Brand
 
-Working visual identity. The product name and logo are not final.
+Working visual identity. The product name is **FlixShift**; the logo is not
+final.
 
 ## Colors
 

@@ -7,7 +7,8 @@ Guidance for Claude Code working in this repository
 
 "Project Shift-eze" is an internal codename, like "Project X". It is not the
 product name and must not appear as one in user-facing copy, app strings or
-store listings. The consumer-facing name is still undecided.
+store listings. The consumer-facing name is **FlixShift** (one word, capital
+F and S).
 
 The product is a mobile app that cuts streaming spend by rotating
 subscriptions: the user gives a watchlist and a monthly budget, and the app
@@ -111,9 +112,10 @@ App colors come from `ShiftEze/Support/Theme.swift`: roles like `Theme.accent`,
 Don't use raw hex in views. Screens don't use the theme yet; that's the
 design pass.
 
-The display name is a placeholder ("Rotation") and the bundle ID is
-`com.example.rotation` until the product name is chosen; the codename must not
-become the display name.
+The display name is "FlixShift" and the bundle ID is `com.doubled.flixshift`
+(DoubleD is Dave and Daniel). The Xcode project, target and source folder are
+still named `ShiftEze`; that's internal and users never see it. The codename
+must not become the display name.
 
 ```bash
 xcodebuild build -project ios/ShiftEze.xcodeproj -scheme ShiftEze \
