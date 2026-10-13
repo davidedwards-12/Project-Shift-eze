@@ -1,0 +1,10 @@
+// Cloudflare deploys this folder with `npx wrangler deploy` (root directory
+// /site). Only what's in public/ is served.
+{
+  // Must match the Worker's name in the Cloudflare dashboard.
+  "name": "flixshift",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./public"
+  }
+}

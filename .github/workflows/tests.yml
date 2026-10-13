@@ -99,3 +99,7 @@ jobs:
 
       - name: Run prototype tests
         run: python .github/scripts/python_tests.py "$GITHUB_STEP_SUMMARY"
+
+      # The website's privacy page is generated from the policy the app ships.
+      - name: Check the website's privacy page matches the app's policy
+        run: python site/build.py --check
