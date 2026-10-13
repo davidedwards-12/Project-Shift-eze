@@ -4,7 +4,7 @@
 
 > **Tell us what you want to watch. We'll figure out what you need.**
 
-*Project Shift-eze is an internal codename. The consumer-facing name hasn't been chosen yet.*
+*Project Shift-eze is the internal codename. The app's name is **FlixShift**.*
 
 We're building a mobile app that helps people spend less on streaming by **rotating subscriptions** instead of paying for every service all the time.
 
@@ -14,7 +14,7 @@ This is a subscription **optimizer**, not just a subscription tracker.
 
 ## Early build
 
-An early version of the iOS app, shown with sample data. The look is a placeholder until the product is named.
+An early version of the iOS app, shown with sample data. The look is a placeholder until the design pass.
 
 | Plan | Upcoming actions | Services | Watchlist |
 | --- | --- | --- | --- |

@@ -1,7 +1,7 @@
 # Project Shift-eze — Product Concept
 
 *"Project Shift-eze" is an internal codename. The consumer-facing name is
-undecided (see [Naming](#naming)).*
+**FlixShift** (see [Naming](#naming)).*
 
 ## Concept
 
@@ -224,6 +224,11 @@ Cancellation/restart actions → Savings → Repeat**
 The original working concept was called **The Big Bang**; the repo codename is
 **Project Shift-eze**. Neither is the consumer-facing name.
 
+The consumer-facing name is **FlixShift**, chosen in October 2026. At the
+time there was no app with that name on the US App Store. Known neighbours:
+`flixshift.com` is registered to someone else, and an unrelated free-streaming
+site uses `flixshift.xyz`. A proper trademark search is still to do.
+
 Previously considered:
 
 | Name        | Status                            |
@@ -329,7 +334,7 @@ any app code. What they showed:
 | 8 | Price changes, promotions, annual plans, bundles, free trials? | Open. Prime-as-$0 and carrier bundles are the first cases to handle. |
 | 9 | How much automation without provider APIs? | Links and reminders only, as planned. No change. |
 | 10 | What should be free vs. premium? | Open. |
-| 11 | Best consumer-facing name/brand? | Open. |
+| 11 | Best consumer-facing name/brand? | **Answered:** FlixShift. Logo still open. |
 
 **Most important to validate:** whether users find enough value in the
 **watchlist → rotation → savings** loop to use the app repeatedly.
