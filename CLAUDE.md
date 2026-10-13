@@ -118,7 +118,8 @@ a logo.
 
 The ⓘ button on the Plan tab opens `AboutView` (`Features/About/`): version,
 a short privacy summary, the TMDB and JustWatch credits their terms require,
-and the contact address. The full policy is `Resources/PrivacyPolicy.md`,
+the contact address and a link to the public policy
+(`https://flixshift.app/privacy/`). The full policy is `Resources/PrivacyPolicy.md`,
 bundled and shown by `PrivacyPolicyView`, so there's one copy of the wording;
 it only understands `#`/`###` headings, `-` bullets and inline Markdown. The
 policy must be updated before any change to what leaves the phone ships (for
