@@ -130,7 +130,9 @@ example moving TMDB calls to a server).
 push to `master`; `wrangler.jsonc` says to serve `site/public/`. The Worker
 has no root directory set in Cloudflare; keep it that way. Pull requests get a
 temporary preview address from `npx wrangler preview`, which needs the
-`previews` block in `wrangler.jsonc`. It's plain HTML
+`previews` block in `wrangler.jsonc`. `.github/workflows/preview.yml` waits until that
+preview serves the PR's files (`.github/scripts/wait_for_preview.py`), then
+posts the link as a PR comment, updated on each push. It's plain HTML
 and CSS: no JavaScript, no tracking, no outside requests, with security
 headers in `public/_headers`. `public/privacy/index.html` is generated from
 the app's `PrivacyPolicy.md` by `python3 site/build.py`; rerun it after
