@@ -91,6 +91,25 @@ section h2 { font-size: 32px; line-height: 1.2; margin: 0 0 28px; letter-spacing
 .split li { margin-bottom: 12px; }
 .split li::marker { color: var(--teal); }
 
+.about { max-width: 40em; color: var(--muted); font-size: 19px; margin: 0 0 28px; }
+.people { display: grid; grid-template-columns: repeat(2, minmax(0, 320px)); gap: 20px; }
+.person { display: flex; align-items: center; gap: 16px; }
+.person h3 { margin: 0 0 2px; }
+.person a { font-size: 15px; display: inline-block; margin-top: 4px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.avatar {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--gradient);
+  color: var(--deep-navy);
+  font-weight: 800;
+  font-size: 22px;
+  display: grid;
+  place-items: center;
+}
+
 footer.site { padding: 32px 0 48px; border-top: 1px solid #111c33; color: var(--muted); font-size: 15px; }
 footer.site a { margin-right: 20px; }
 
@@ -105,5 +124,6 @@ footer.site a { margin-right: 20px; }
   .hero, .split { grid-template-columns: 1fr; gap: 36px; }
   .hero { padding-top: 24px; }
   .steps { grid-template-columns: 1fr; }
+  .people { grid-template-columns: 1fr; }
   .split figure { order: 2; }
 }
