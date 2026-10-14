@@ -27,11 +27,20 @@ struct AboutView: View {
                     Label("No accounts, ads, analytics or tracking.", systemImage: "hand.raised")
                     Label("Only title searches and lookups go out, to TMDB.", systemImage: "magnifyingglass")
                     NavigationLink("Privacy policy") { PrivacyPolicyView() }
+                    Link("Read it at flixshift.app", destination: AppInfo.privacyPolicyURL)
                 } header: {
                     Text("Your privacy")
                 }
 
                 Section {
+                    // TMDB's terms ask for their logo beside the credit, unaltered
+                    // and less prominent than the app's own name.
+                    Image("TMDBLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 14)
+                        .padding(.vertical, 4)
+                        .accessibilityLabel("TMDB")
                     Text("This product uses the TMDB API but is not endorsed or certified by TMDB.")
                     Text("Streaming availability is provided by JustWatch.")
                     Link("themoviedb.org", destination: URL(string: "https://www.themoviedb.org")!)
@@ -56,6 +65,8 @@ struct AboutView: View {
 
 enum AppInfo {
     static let contactEmail = "support@flixshift.app"
+    /// The same policy the app shows, on the website (see site/build.py).
+    static let privacyPolicyURL = URL(string: "https://flixshift.app/privacy/")!
 
     /// The name under the app icon.
     static var name: String { string("CFBundleDisplayName") ?? string("CFBundleName") ?? "" }
