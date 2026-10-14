@@ -51,8 +51,12 @@ struct AboutView: View {
                     Text("Where a title streams is sometimes wrong or out of date. Check before you subscribe.")
                 }
 
-                Section("Contact") {
+                Section {
                     Link(AppInfo.contactEmail, destination: URL(string: "mailto:\(AppInfo.contactEmail)")!)
+                } header: {
+                    Text("Contact")
+                } footer: {
+                    Text("Made by David and Daniel.")
                 }
             }
             .themedRows()
