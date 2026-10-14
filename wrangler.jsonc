@@ -7,5 +7,8 @@
   "compatibility_date": "2026-10-01",
   "assets": {
     "directory": "./site/public"
-  }
+  },
+  // Pull requests run `npx wrangler preview`, which gives each PR its own
+  // temporary address. It needs this block, even empty.
+  "previews": {}
 }
