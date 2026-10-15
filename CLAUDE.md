@@ -151,6 +151,14 @@ The display name is "FlixShift" and the bundle ID is `com.doubled.flixshift`
 still named `ShiftEze`; that's internal and users never see it. The codename
 must not become the display name.
 
+Builds go to testers through TestFlight under Dave's Apple Developer account
+(Individual); Daniel is in App Store Connect with his own Apple ID.
+`ITSAppUsesNonExemptEncryption = NO` is set because the app only uses
+standard HTTPS. Bump `CURRENT_PROJECT_VERSION` for every upload (App Store
+Connect rejects a repeated build number) and `MARKETING_VERSION` for a new
+version. A local archive includes the TMDB key from `Secrets.xcconfig`, so
+builds are for the team only until #14 moves TMDB calls to a server.
+
 ```bash
 xcodebuild build -project ios/ShiftEze.xcodeproj -scheme ShiftEze \
   -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
