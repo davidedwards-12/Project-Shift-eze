@@ -177,6 +177,21 @@ recommendations, explaining why a rotation was chosen, predicting what the user
 will want to watch, and conversational subscription management. The fundamental
 optimization problem can be solved deterministically.
 
+## Privacy and accounts
+
+FlixShift works without an account: subscriptions, watchlist, budget and
+savings are stored on the phone, and paid features (if any) unlock through
+the user's Apple ID with no sign-in of ours.
+
+If accounts are ever added, for something that needs them (household sharing
+across Apple IDs, Android cross-purchase, web sync), they are **optional**:
+the core app keeps working with no sign-up, and the privacy policy is updated
+before they ship.
+
+Marketing leads with promises that hold either way: no ads, no tracking,
+never asks for streaming passwords, data never sold. "No sign-up needed to
+get started" is fine as a detail; "no accounts" is not a headline promise.
+
 ## Business model
 
 - **Free:** subscription tracking, renewal reminders, basic spending dashboard
@@ -185,6 +200,9 @@ optimization problem can be solved deterministically.
   optimization, more advanced notifications, historical spending analytics
 - **Affiliate revenue** from streaming-service activations as a possible
   additional stream
+
+The current proposal (free core, one-time Pro unlock, affiliate links later)
+is in GitHub issue #44.
 
 ## Long-term vision
 

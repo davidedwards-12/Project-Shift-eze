@@ -207,6 +207,12 @@ never needed in CI.
   semi-automated: the app opens the correct management page and the user
   completes the step. Don't design around credential storage or browser
   automation of provider sites.
+- **Accounts are optional.** The app works without signing in. If accounts
+  are ever added (household sharing, cross-platform purchases), the core app
+  still works without one, and the privacy policy changes first. Copy and
+  marketing never promise "no accounts" as a headline; lead with no ads, no
+  tracking, no passwords and never selling data (`docs/CONCEPT.md`, Privacy
+  and accounts).
 - **The billing provider decides the management link.** A subscription billed
   through Apple, Google, Amazon, Roku, a carrier or a cable bundle is managed
   there, not at the streaming service. Model the billing provider separately
