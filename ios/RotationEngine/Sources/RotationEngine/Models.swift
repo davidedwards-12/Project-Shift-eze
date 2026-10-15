@@ -83,6 +83,9 @@ public struct WatchlistEntry: Hashable, Sendable {
     /// Services (normalized names) the user says this title isn't actually
     /// on, whatever TMDB says. The plan ignores them for this title.
     public var notOn: [String]?
+    /// When the user marked it watched. Watched titles stay on the list but
+    /// drop out of the plan; nil means still to watch.
+    public var watchedOn: CalendarDate?
 
     public init(
         id: String? = nil,
@@ -91,7 +94,8 @@ public struct WatchlistEntry: Hashable, Sendable {
         free: [String]? = nil,
         months: Int? = nil,
         checkedOn: CalendarDate? = nil,
-        notOn: [String]? = nil
+        notOn: [String]? = nil,
+        watchedOn: CalendarDate? = nil
     ) {
         self.id = id ?? title
         self.title = title
@@ -100,11 +104,12 @@ public struct WatchlistEntry: Hashable, Sendable {
         self.months = months
         self.checkedOn = checkedOn
         self.notOn = notOn
+        self.watchedOn = watchedOn
     }
 }
 
 extension WatchlistEntry: Codable {
-    enum CodingKeys: String, CodingKey { case id, title, services, free, months, checkedOn, notOn }
+    enum CodingKeys: String, CodingKey { case id, title, services, free, months, checkedOn, notOn, watchedOn }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -115,6 +120,7 @@ extension WatchlistEntry: Codable {
         months = try c.decodeIfPresent(Int.self, forKey: .months)
         checkedOn = try c.decodeIfPresent(CalendarDate.self, forKey: .checkedOn)
         notOn = try c.decodeIfPresent([String].self, forKey: .notOn)
+        watchedOn = try c.decodeIfPresent(CalendarDate.self, forKey: .watchedOn)
     }
 }
 

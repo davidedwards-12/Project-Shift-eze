@@ -167,4 +167,12 @@ let providersJSON = """
         let due = AvailabilityRefresh.due(watchlist, today: oct2, urgent: ["tmdb:tv:5"])
         #expect(due == ["tmdb:tv:1", "tmdb:tv:4", "tmdb:tv:5"])
     }
+
+    @Test func watchedTitlesAreNotRechecked() {
+        let watchlist = [
+            WatchlistEntry(id: "tmdb:movie:1", title: "watched", services: [], watchedOn: CalendarDate(2026, 9, 1)),
+            WatchlistEntry(id: "tmdb:movie:2", title: "still to watch", services: []),
+        ]
+        #expect(AvailabilityRefresh.due(watchlist, today: oct2) == ["tmdb:movie:2"])
+    }
 }

@@ -24,7 +24,8 @@ struct PlanView: View {
                     case .success(let plan) where plan.months.isEmpty:
                         // No paid months: savings would just be everything you pay
                         // now, so don't show a number.
-                        EmptyPlanSection(watchlistIsEmpty: model.watchlist.isEmpty)
+                        EmptyPlanSection(watchlistIsEmpty: model.watchlist.isEmpty,
+                                         allWatched: model.watchlist.allSatisfy { $0.watchedOn != nil })
                         BudgetSection(budget: $model.budget)
                         if !model.watchlist.isEmpty {
                             // Everything is free or included: cancelling is real advice.
@@ -71,6 +72,8 @@ struct PlanView: View {
 
 private struct EmptyPlanSection: View {
     let watchlistIsEmpty: Bool
+    /// Everything on the watchlist is marked watched.
+    let allWatched: Bool
 
     var body: some View {
         Section {
@@ -79,6 +82,12 @@ private struct EmptyPlanSection: View {
                     "No plan yet",
                     systemImage: "list.bullet",
                     description: Text("Add movies and shows on the Watchlist tab and we'll plan which services you need.")
+                )
+            } else if allWatched {
+                ContentUnavailableView(
+                    "You've watched everything",
+                    systemImage: "checkmark.circle",
+                    description: Text("Nothing left to pay for. Add more on the Watchlist tab when you're ready.")
                 )
             } else {
                 ContentUnavailableView(

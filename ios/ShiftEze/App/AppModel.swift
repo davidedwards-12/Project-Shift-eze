@@ -239,6 +239,29 @@ final class AppModel {
         watchlist[index].notOn = notOn.isEmpty ? nil : notOn.sorted()
     }
 
+    // MARK: - Watched
+
+    /// Mark a title watched (today) or back to still-to-watch. Watched titles
+    /// drop out of the plan but stay on the list; putting one back returns it
+    /// to its old place in the order.
+    func setWatched(_ watched: Bool, titleID: String) {
+        guard let index = watchlist.firstIndex(where: { $0.id == titleID }) else { return }
+        watchlist[index].watchedOn = watched ? today : nil
+    }
+
+    /// Reorder the titles still to watch (offsets are within that list);
+    /// watched titles keep their places.
+    func moveToWatch(fromOffsets: IndexSet, toOffset: Int) {
+        var toWatch = watchlist.filter { $0.watchedOn == nil }
+        toWatch.move(fromOffsets: fromOffsets, toOffset: toOffset)
+        var reordered = toWatch.makeIterator()
+        watchlist = watchlist.map { $0.watchedOn == nil ? reordered.next()! : $0 }
+    }
+
+    func removeFromWatchlist(ids: [String]) {
+        watchlist.removeAll { ids.contains($0.id) }
+    }
+
     /// Titles the plan will soon have the user subscribe for: worth checking
     /// daily so we don't send them to a service that's dropped the title.
     private var idsBehindUpcomingStarts: Set<String> {
