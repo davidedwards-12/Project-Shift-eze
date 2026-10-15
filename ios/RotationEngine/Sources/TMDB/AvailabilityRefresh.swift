@@ -17,7 +17,8 @@ public enum AvailabilityRefresh {
         urgent: Set<String> = []
     ) -> [String] {
         watchlist.compactMap { entry in
-            guard SearchResult.reference(fromID: entry.id) != nil else { return nil }
+            // Watched titles aren't planned, so where they stream doesn't matter.
+            guard entry.watchedOn == nil, SearchResult.reference(fromID: entry.id) != nil else { return nil }
             guard let checked = entry.checkedOn else { return entry.id }
             let limit = urgent.contains(entry.id) ? urgentMaxAgeDays : maxAgeDays
             return checked.days(to: today) >= limit ? entry.id : nil

@@ -271,6 +271,15 @@ func line(_ date: CalendarDate, _ title: String) -> String { "\(date) \(title)" 
         #expect(plan.titles(in: 0, on: "Netflix").map(\.name) == ["Stranger Things", "Fighting Spirit"])
         #expect(plan.titles(in: 0, on: "Netflix").map(\.alsoFree) == [false, true])
     }
+
+    @Test func watchedTitlesDropOutOfThePlan() throws {
+        let plan = try RotationPlan.make(services: PlanningRules.services, watchlist: [
+            WatchlistEntry(title: "Stranger Things", services: ["Netflix"]),
+            WatchlistEntry(title: "Andor", services: ["Disney Plus"], watchedOn: CalendarDate(2026, 9, 20)),
+        ], budget: 4000, start: start, today: today)
+        #expect(plan.cover.services == ["Netflix"])
+        #expect(plan.title(id: "Andor") == nil)
+    }
 }
 
 @Suite struct TitleIdentity {
@@ -289,8 +298,15 @@ func line(_ date: CalendarDate, _ title: String) -> String { "\(date) \(title)" 
         #expect(entry.id == "Andor")
     }
 
+    @Test func entriesSavedBeforeWatchedExistedAreStillToWatch() throws {
+        let json = #"{"id": "abc", "title": "Andor", "services": ["Disney Plus"]}"#
+        let entry = try JSONDecoder().decode(WatchlistEntry.self, from: Data(json.utf8))
+        #expect(entry.watchedOn == nil)
+    }
+
     @Test func idsRoundTripThroughJSON() throws {
-        let entry = WatchlistEntry(id: "abc", title: "Andor", services: ["Disney Plus"], months: 2)
+        let entry = WatchlistEntry(id: "abc", title: "Andor", services: ["Disney Plus"], months: 2,
+                                   watchedOn: CalendarDate(2026, 9, 20))
         let decoded = try JSONDecoder().decode(WatchlistEntry.self, from: JSONEncoder().encode(entry))
         #expect(decoded == entry)
     }

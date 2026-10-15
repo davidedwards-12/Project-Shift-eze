@@ -34,7 +34,9 @@ public struct RotationPlan: Sendable {
         today: CalendarDate,
         links: ManagementLinks = .bundled
     ) throws(Failure) -> RotationPlan {
-        let (catalog, titles) = Planning.prepare(services: services, watchlist: watchlist, memberships: memberships)
+        // Watched titles don't need a service any more.
+        let toWatch = watchlist.filter { $0.watchedOn == nil }
+        let (catalog, titles) = Planning.prepare(services: services, watchlist: toWatch, memberships: memberships)
         let (included, rest) = Planning.splitIncluded(titles)
         let (free, paidOrNone) = Planning.splitFree(rest)
         let paid = paidOrNone.filter { !$0.services.isEmpty }

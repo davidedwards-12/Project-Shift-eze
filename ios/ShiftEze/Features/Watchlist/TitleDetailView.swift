@@ -11,12 +11,37 @@ struct TitleDetailView: View {
     @State private var checkedAt: Date?
 
     private var title: Title? { model.titles.first { $0.id == id } }
+    private var watchedOn: CalendarDate? { model.watchlist.first { $0.id == id }?.watchedOn }
     private var fromTMDB: Bool { SearchResult.reference(fromID: id) != nil }
+
+    /// Letterboxd finds a film by its TMDB id. It has no TV shows yet.
+    private var letterboxdURL: URL? {
+        guard let ref = SearchResult.reference(fromID: id), ref.mediaType == .movie else { return nil }
+        return URL(string: "https://letterboxd.com/tmdb/\(ref.tmdbID)/")
+    }
 
     var body: some View {
         if let title {
             List {
                 Group {
+                    Section {
+                        if let watchedOn {
+                            LabeledContent("Watched", value: watchedOn.short)
+                            if let letterboxdURL {
+                                Link("Log it on Letterboxd", destination: letterboxdURL)
+                            }
+                            Button("Not finished? Put it back in the plan") {
+                                model.setWatched(false, titleID: id)
+                            }
+                        } else {
+                            Button("Mark as watched") { model.setWatched(true, titleID: id) }
+                        }
+                    } footer: {
+                        Text(watchedOn == nil
+                             ? "Once you've watched it, it drops out of your plan, so you may be able to cancel sooner."
+                             : "Watched titles aren't in your plan.")
+                    }
+
                     Section {
                         let listed = (title.services + title.notOn).sorted()
                         if listed.isEmpty {

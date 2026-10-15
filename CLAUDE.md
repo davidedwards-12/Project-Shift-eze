@@ -89,6 +89,14 @@ is asked once onboarding is done and there's something to remind about.
 `NotificationHandler` opens the cancel/restart page when one is tapped. Action
 ids (`cancel-Netflix-2026-10-22`) are stable across launches.
 
+Watchlist entries also carry `watchedOn`. Watched titles stay on the
+Watchlist tab, in a "Watched" section below the rest (swipe right to mark or
+unmark; also on `TitleDetailView`), but `RotationPlan.make` leaves them out
+and `AvailabilityRefresh` stops re-checking them. Reordering only moves the
+titles still to watch (`AppModel.moveToWatch`). A watched movie links to
+Letterboxd by its TMDB id (`letterboxd.com/tmdb/<id>/`); TV has no link
+because Letterboxd doesn't list shows yet.
+
 Marking an action done (swipe left → Done) changes the user's subscriptions
 via `SubscriptionChanges.apply`: a cancel makes the service not current (paid
 up until the renewal date), a start/restart makes it current, renewing on the
