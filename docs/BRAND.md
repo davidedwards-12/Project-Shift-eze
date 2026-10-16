@@ -1,7 +1,21 @@
 # Brand
 
-Working visual identity. The product name is **FlixShift**; the logo is not
-final.
+Visual identity for **FlixShift**.
+
+## Logo
+
+![FlixShift logo](brand/logo.png)
+
+An F with an S inside it, slanted for motion: the "shift". Black on the brand
+gradient, square. Used as the app icon (iOS rounds the corners), the website
+icons and the Instagram profile picture.
+
+- **File:** `docs/brand/logo.png` (1080 × 1080). Ask for a vector version
+  (SVG or PDF) and the mark alone on a transparent background, in black and
+  in white, before using it anywhere else.
+- **Don't** redraw, recolor, stretch or add effects to the mark.
+- **At 16 px** (browser tabs) the inside of the S fills in; it still reads as
+  an F. A simplified small-size version would fix that if it matters.
 
 ## Colors
 

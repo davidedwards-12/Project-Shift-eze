@@ -121,8 +121,8 @@ Don't use raw hex in views. The app is dark only. Every `List`/`Form` gets
 `.themedList()` with its contents wrapped in a `Group` carrying
 `.themedRows()`; full-width `.borderedProminent` buttons use
 `.primaryButtonLabel()` on their label. The gradient is for hero elements
-(the savings card, the app icon). The app icon is a placeholder until there's
-a logo.
+(the savings card, the app icon). The app icon is the FlixShift logo
+(`docs/brand/logo.png`; see `docs/BRAND.md`).
 
 The ⓘ button on the Plan tab opens `AboutView` (`Features/About/`): version,
 a short privacy summary, the TMDB and JustWatch credits their terms require,
