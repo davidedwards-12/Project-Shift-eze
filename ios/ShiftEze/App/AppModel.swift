@@ -239,6 +239,13 @@ final class AppModel {
         watchlist[index].notOn = notOn.isEmpty ? nil : notOn.sorted()
     }
 
+    /// Pay for a service for this title instead of watching it free with ads
+    /// (or go back to using free).
+    func setAdFree(_ adFree: Bool, titleID: String) {
+        guard let index = watchlist.firstIndex(where: { $0.id == titleID }) else { return }
+        watchlist[index].adFree = adFree ? true : nil
+    }
+
     // MARK: - Watched
 
     /// Mark a title watched (today) or back to still-to-watch. Watched titles

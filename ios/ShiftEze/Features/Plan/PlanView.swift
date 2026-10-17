@@ -35,7 +35,7 @@ struct PlanView: View {
                         ElsewhereSection(plan: plan, hasAmazonPrime: model.hasAmazonPrime)
                     case .success(let plan):
                         SavingsSection(savings: plan.savings)
-                        BudgetSection(budget: $model.budget)
+                        BudgetSection(budget: $model.budget, startsOn: model.start)
                         ForEach(plan.months.indices, id: \.self) { index in
                             MonthSection(plan: plan, index: index)
                         }
@@ -93,7 +93,7 @@ private struct EmptyPlanSection: View {
                 ContentUnavailableView(
                     "Nothing to pay for",
                     systemImage: "checkmark.seal",
-                    description: Text("Everything on your watchlist is free or included with a membership.")
+                    description: Text("Everything on your watchlist is free with ads or included with a membership. To watch something ad-free, open it on the Watchlist tab.")
                 )
             }
         }
@@ -209,11 +209,17 @@ private struct SavingsSection: View {
 
 private struct BudgetSection: View {
     @Binding var budget: Cents
+    /// When the first planned month begins, if there is one.
+    var startsOn: CalendarDate? = nil
 
     var body: some View {
         Section {
             Stepper(value: $budget, in: 5_00...200_00, step: 5_00) {
                 LabeledContent("Monthly budget", value: budget.money)
+            }
+        } footer: {
+            if let startsOn {
+                Text("Your plan starts \(startsOn.short). Anything to do before then is under Upcoming actions.")
             }
         }
     }
@@ -413,13 +419,17 @@ private struct ElsewhereSection: View {
         }
         let placement = plan.freePlacement
         if !placement.onCurrent.isEmpty || !placement.freeOnly.isEmpty {
-            Section("Free") {
+            Section {
                 ForEach(placement.onCurrent.sorted(by: { $0.key < $1.key }), id: \.key) { id, service in
                     TitleRow(name: plan.title(id: id)?.name ?? id, detail: "On \(service), which you pay for now: watch before you cancel it")
                 }
                 ForEach(plan.free.filter { placement.freeOnly.contains($0.id) }, id: \.id) {
-                    TitleRow(name: $0.name, detail: $0.free.formatted())
+                    TitleRow(name: $0.name, detail: "Free with ads on \($0.free.formatted())")
                 }
+            } header: {
+                Text("Free")
+            } footer: {
+                Text("We don't pay for a service for these. To watch one ad-free, open it on the Watchlist tab.")
             }
         }
         if !plan.library.isEmpty {

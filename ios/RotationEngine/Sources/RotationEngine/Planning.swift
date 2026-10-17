@@ -10,6 +10,9 @@ public enum Planning {
     public static let trustedFree: Set<String> = [
         "tubi tv", "the roku channel", "pluto tv", "plex", "plex channel", "youtube free", "fawesome",
     ]
+    /// Free providers TMDB lists separately that are the same app to a viewer
+    /// (lowercased name → the name shown).
+    public static let freeAliases: [String: String] = ["plex channel": "Plex"]
     /// Free, but only with a library card: shown as an option, never relied on.
     public static let library: Set<String> = ["kanopy", "hoopla"]
 
@@ -17,8 +20,9 @@ public enum Planning {
     ///
     /// Provider names map to services via names and aliases; untracked ones
     /// (e.g. cable VOD) are dropped, and so are services the user marked the
-    /// title as not on. A service whose `includedWith` membership
-    /// the user has makes its titles `included`.
+    /// title as not on (free providers too). A title marked `adFree` keeps
+    /// no free providers, so the plan pays for it. A service whose
+    /// `includedWith` membership the user has makes its titles `included`.
     public static func prepare(
         services: [Service],
         watchlist: [WatchlistEntry],
@@ -35,16 +39,29 @@ public enum Planning {
             let excluded = Set((entry.notOn ?? []).compactMap { lookup[$0.lowercased()] }).intersection(listed)
             let on = listed.subtracting(excluded).sorted()
             let free = entry.free ?? []
+            // Free providers aren't in the catalog, so "not on" matches them by name,
+            // after merging variants of the same app ("Plex Channel" is Plex).
+            func merged(_ name: String) -> String { freeAliases[name.lowercased()] ?? name }
+            let notOnNames = Set((entry.notOn ?? []).map { merged($0).lowercased() })
+            var trusted: [String] = []
+            for name in free where trustedFree.contains(name.lowercased()) && !trusted.contains(merged(name)) {
+                trusted.append(merged(name))
+            }
+            let freeNotOn = trusted.filter { notOnNames.contains($0.lowercased()) }
+            let adFree = entry.adFree ?? false
             return Title(
                 id: entry.id,
                 name: entry.title,
                 services: on,
-                free: free.filter { trustedFree.contains($0.lowercased()) },
+                free: adFree ? [] : trusted.filter { !freeNotOn.contains($0) },
                 library: free.filter { library.contains($0.lowercased()) },
                 included: on.filter { includedServices.contains($0) },
                 months: entry.months ?? 1,
                 checkedOn: entry.checkedOn,
-                notOn: excluded.sorted()
+                notOn: excluded.sorted(),
+                freeListed: trusted,
+                freeNotOn: freeNotOn,
+                adFree: adFree
             )
         }
         return (Catalog(services), titles)

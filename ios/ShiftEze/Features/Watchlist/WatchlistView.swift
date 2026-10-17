@@ -83,6 +83,12 @@ private struct WatchlistRow: View {
                 Text(title.name).font(.headline)
                     .foregroundStyle(watchedOn == nil ? .primary : .secondary)
                 Text(whereToWatch(title)).font(.subheadline).foregroundStyle(.secondary)
+                if watchedOn == nil, !title.free.isEmpty, !title.services.isEmpty {
+                    // The surprising case: it's on a paid service, but the plan won't pay for it.
+                    Text("No subscription needed: watch it free with ads")
+                        .font(.caption)
+                        .foregroundStyle(Theme.highlight)
+                }
                 if let watchedOn {
                     Text("Watched \(watchedOn.short)").font(.caption).foregroundStyle(.tertiary)
                 } else if isChecking {
