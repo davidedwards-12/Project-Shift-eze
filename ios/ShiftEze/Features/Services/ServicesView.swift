@@ -18,8 +18,11 @@ struct ServicesView: View {
                     } footer: {
                         Text("Prime members get Prime Video at no extra cost, so it's never rotated.")
                     }
-                    serviceSection("Paying for now", current: true)
-                    serviceSection("Not subscribed", current: false)
+                    serviceSection("Paying for now") { $0.current && $0.includedVia == nil }
+                    if model.services.contains(where: { $0.includedVia != nil }) {
+                        serviceSection("Included with another plan") { $0.includedVia != nil }
+                    }
+                    serviceSection("Not subscribed") { !$0.current && $0.includedVia == nil }
                 }
                 .themedRows()
             }
@@ -45,8 +48,8 @@ struct ServicesView: View {
         }
     }
 
-    private func serviceSection(_ title: String, current: Bool) -> some View {
-        let indices = model.services.indices.filter { model.services[$0].current == current }
+    private func serviceSection(_ title: String, _ belongs: (Service) -> Bool) -> some View {
+        let indices = model.services.indices.filter { belongs(model.services[$0]) }
         return Section(title) {
             if indices.isEmpty {
                 Text("None yet").foregroundStyle(.secondary)
@@ -73,9 +76,17 @@ private struct ServiceRow: View {
             HStack {
                 Text(service.name).font(.headline)
                 Spacer()
-                Text("\(service.price.money)/mo").monospacedDigit()
+                if service.includedVia != nil {
+                    Text("Included").foregroundStyle(.secondary)
+                } else {
+                    Text("\(service.price.money)/mo").monospacedDigit()
+                }
             }
-            if service.current, let renews = service.renews {
+            if let via = service.includedViaLabel {
+                Text("With \(via) · no extra cost")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else if service.current, let renews = service.renews {
                 Text("Renews on the \(renews.ordinal) · \(billing)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -101,11 +112,38 @@ struct ServiceDetailView: View {
     var body: some View {
         @Bindable var model = model
         let service = $model.services[index]
+        let included = service.wrappedValue.includedVia != nil
         Form {
             Group {
                 Section {
-                    Toggle("I pay for this now", isOn: service.current)
-                    PriceField(price: service.price)
+                    Toggle("I pay for this now", isOn: Binding(
+                        get: { service.wrappedValue.current },
+                        set: { pays in
+                            if pays { model.setIncluded(nil, at: index) }
+                            model.services[index].current = pays
+                        }
+                    ))
+                    if !included {
+                        PriceField(price: service.price)
+                    }
+                }
+                Section {
+                    Toggle("Included with another plan", isOn: Binding(
+                        get: { included },
+                        set: { model.setIncluded($0 ? "" : nil, at: index) }
+                    ))
+                    if included {
+                        LabeledContent("Included with") {
+                            TextField("Included with", text: Binding(
+                                get: { service.wrappedValue.includedVia ?? "" },
+                                set: { model.services[index].includedVia = $0 }
+                            ), prompt: Text("Verizon"))
+                            .multilineTextAlignment(.trailing)
+                            .autocorrectionDisabled()
+                        }
+                    }
+                } footer: {
+                    Text("Get it at no extra cost through your phone, internet or another membership? We'll count its shows as included and never ask you to cancel it.")
                 }
                 if service.wrappedValue.current {
                     Section {
@@ -177,4 +215,12 @@ struct BillingFields: View {
 
 #Preview {
     ServicesView().environment(AppModel.sample())
+}
+
+extension Service {
+    /// What it's included with, for display ("Verizon", or "another plan" if
+    /// unnamed); nil if it isn't included with another plan.
+    var includedViaLabel: String? {
+        includedVia.map { $0.trimmingCharacters(in: .whitespaces).isEmpty ? "another plan" : $0 }
+    }
 }

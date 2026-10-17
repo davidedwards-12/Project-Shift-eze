@@ -34,6 +34,13 @@ public struct RotationPlan: Sendable {
         today: CalendarDate,
         links: ManagementLinks = .bundled
     ) throws(Failure) -> RotationPlan {
+        // A service included with another plan isn't paid for, so it's never
+        // current: no keep or cancel actions, and not in "paying now".
+        let services = services.map { s -> Service in
+            var s = s
+            if s.includedVia != nil { s.current = false }
+            return s
+        }
         // Watched titles don't need a service any more.
         let toWatch = watchlist.filter { $0.watchedOn == nil }
         let (catalog, titles) = Planning.prepare(services: services, watchlist: toWatch, memberships: memberships)

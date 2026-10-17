@@ -312,6 +312,40 @@ func line(_ date: CalendarDate, _ title: String) -> String { "\(date) \(title)" 
     }
 }
 
+@Suite struct IncludedWithAnotherPlan {
+    // Hulu and Disney+ through Verizon, at no extra cost.
+    var services: [Service] {
+        PlanningRules.services.map { s in
+            var s = s
+            if s.name == "Hulu" || s.name == "Disney+" { s.includedVia = "Verizon"; s.current = true; s.renews = 10 }
+            return s
+        }
+    }
+
+    @Test func titlesOnAnIncludedServiceAreIncluded() throws {
+        let plan = try RotationPlan.make(services: services, watchlist: [
+            WatchlistEntry(title: "The Bear", services: ["Hulu"]),
+            WatchlistEntry(title: "Stranger Things", services: ["Netflix Standard with Ads"]),
+        ], budget: 4000, start: start, today: today)
+        #expect(plan.included.map(\.name) == ["The Bear"])
+        #expect(plan.cover.services == ["Netflix"])
+    }
+
+    @Test func includedServicesGetNoActionsAndArentPaidFor() throws {
+        let plan = try RotationPlan.make(services: services, watchlist: [
+            WatchlistEntry(title: "Andor", services: ["Disney Plus"]),
+        ], budget: 4000, start: start, today: today)
+        #expect(!plan.actions.contains { $0.service == "Disney+" || $0.service == "Hulu" })
+        // Netflix is still paid for now; Hulu and Disney+ aren't.
+        #expect(plan.savings.baseline == 2499)
+    }
+
+    @Test func includedViaRoundTrips() throws {
+        let service = Service(name: "Hulu", price: 1899, includedVia: "Verizon")
+        #expect(try JSONDecoder().decode(Service.self, from: JSONEncoder().encode(service)) == service)
+    }
+}
+
 @Suite struct FreeWithAds {
     // Like Star Trek: The Next Generation: on a paid service and free on Pluto TV.
     let tng = WatchlistEntry(title: "TNG", services: ["Hulu"], free: ["Pluto TV"])

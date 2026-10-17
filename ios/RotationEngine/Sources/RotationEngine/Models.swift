@@ -15,6 +15,10 @@ public struct Service: Hashable, Sendable {
     public var billedThrough: String?
     /// A membership that makes it free, e.g. "amazon_prime" for Prime Video.
     public var includedWith: String?
+    /// The user gets it at no extra cost through another plan they have
+    /// (e.g. "Verizon"; empty if they didn't say which). It's never paid for,
+    /// cancelled or restarted, and its titles count as included.
+    public var includedVia: String?
     /// Other names TMDB uses for it ("Netflix Standard with Ads").
     public var aliases: [String]
 
@@ -25,6 +29,7 @@ public struct Service: Hashable, Sendable {
         renews: Int? = nil,
         billedThrough: String? = nil,
         includedWith: String? = nil,
+        includedVia: String? = nil,
         aliases: [String] = []
     ) {
         self.name = name
@@ -33,6 +38,7 @@ public struct Service: Hashable, Sendable {
         self.renews = renews
         self.billedThrough = billedThrough
         self.includedWith = includedWith
+        self.includedVia = includedVia
         self.aliases = aliases
     }
 }
@@ -42,6 +48,7 @@ extension Service: Codable {
         case name, price, current, renews, aliases
         case billedThrough = "billed_through"
         case includedWith = "included_with"
+        case includedVia = "included_via"
     }
 
     public init(from decoder: Decoder) throws {
@@ -53,6 +60,7 @@ extension Service: Codable {
         renews = try c.decodeIfPresent(Int.self, forKey: .renews)
         billedThrough = try c.decodeIfPresent(String.self, forKey: .billedThrough)
         includedWith = try c.decodeIfPresent(String.self, forKey: .includedWith)
+        includedVia = try c.decodeIfPresent(String.self, forKey: .includedVia)
         aliases = try c.decodeIfPresent([String].self, forKey: .aliases) ?? []
     }
 
@@ -64,6 +72,7 @@ extension Service: Codable {
         try c.encodeIfPresent(renews, forKey: .renews)
         try c.encodeIfPresent(billedThrough, forKey: .billedThrough)
         try c.encodeIfPresent(includedWith, forKey: .includedWith)
+        try c.encodeIfPresent(includedVia, forKey: .includedVia)
         try c.encode(aliases, forKey: .aliases)
     }
 }
