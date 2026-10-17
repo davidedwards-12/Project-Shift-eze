@@ -174,10 +174,11 @@ Builds go to testers through TestFlight under Dave's Apple Developer account
 `ITSAppUsesNonExemptEncryption = NO` is set because the app only uses
 standard HTTPS. Xcode Cloud builds and uploads to TestFlight on merges to `master` that
 change `ios/` (workflow set up in Xcode by Dave). `ios/ci_scripts/` holds its
-hooks: `ci_post_clone.sh` writes `Secrets.xcconfig` from the workflow's secret
-`TMDB_API_KEY` environment variable (never committed), and
-`ci_pre_xcodebuild.sh` sets the build number to Xcode Cloud's
-`CI_BUILD_NUMBER` + 100 (builds 1 and 2 were uploaded by hand). Bump
+hook `ci_post_clone.sh`, which writes `Secrets.xcconfig` from the workflow's
+secret `TMDB_API_KEY` environment variable (never committed). Xcode Cloud sets
+the build number of what it uploads itself, ignoring `CURRENT_PROJECT_VERSION`;
+its next number is set in App Store Connect (Xcode Cloud → Settings → Build
+Number; builds 1 and 2 were uploaded by hand, so it starts at 3). Bump
 `MARKETING_VERSION` by hand for a new version. Every build includes the TMDB
 key, so builds are for the team only until #14 moves TMDB calls to a server.
 
