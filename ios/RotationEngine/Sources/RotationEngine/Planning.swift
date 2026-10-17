@@ -22,13 +22,16 @@ public enum Planning {
     /// (e.g. cable VOD) are dropped, and so are services the user marked the
     /// title as not on (free providers too). A title marked `adFree` keeps
     /// no free providers, so the plan pays for it. A service whose
-    /// `includedWith` membership the user has makes its titles `included`.
+    /// `includedWith` membership the user has, or one included with another of
+    /// their plans (`includedVia`), makes its titles `included`.
     public static func prepare(
         services: [Service],
         watchlist: [WatchlistEntry],
         memberships: [String: Bool] = [:]
     ) -> (Catalog, [Title]) {
-        let includedServices = Set(services.filter { s in s.includedWith.map { memberships[$0] == true } ?? false }.map(\.name))
+        let includedServices = Set(services.filter { s in
+            s.includedVia != nil || (s.includedWith.map { memberships[$0] == true } ?? false)
+        }.map(\.name))
         var lookup: [String: String] = [:]
         for s in services {
             for n in [s.name] + s.aliases { lookup[n.lowercased()] = s.name }

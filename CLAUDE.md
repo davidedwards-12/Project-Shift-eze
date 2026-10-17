@@ -106,6 +106,15 @@ ad-free") makes the planner ignore its free options. The Plan tab says when
 the plan starts (the 1st of next month); anything due before then is only in
 Upcoming actions.
 
+A service can be **included with another plan** (`Service.includedVia`, e.g.
+"Verizon"; set in the service editor): it's never current, paid for,
+cancelled or restarted (`RotationPlan.make` forces `current` off), its titles
+are `included` like Prime Video's, and it's taken out of the baseline. The
+Services tab lists these in their own section; the Plan tab shows "Hulu with
+Verizon" under "Already included". In onboarding, a service you switch on has a small "Get it with your phone
+or internet plan?" link that marks it included. Paid bundles (one price for several
+services) aren't modeled yet.
+
 Marking an action done (swipe left → Done) changes the user's subscriptions
 via `SubscriptionChanges.apply`: a cancel makes the service not current (paid
 up until the renewal date), a start/restart makes it current, renewing on the

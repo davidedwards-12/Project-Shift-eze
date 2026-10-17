@@ -157,6 +157,22 @@ final class AppModel {
         baseline.map { ActualSavings.summary(baseline: $0, services: services, changes: changes, today: today) }
     }
 
+    /// Mark a service as included with another plan the user has (`via`,
+    /// e.g. "Verizon"; empty if unnamed), or not (`nil`). Included services
+    /// aren't paid for, so they stop being current and leave the baseline.
+    func setIncluded(_ via: String?, at index: Int) {
+        guard services.indices.contains(index) else { return }
+        var service = services[index]
+        service.includedVia = via
+        if via != nil {
+            service.current = false
+            service.renews = nil
+            service.billedThrough = nil
+        }
+        services[index] = service
+        if via != nil { setInBaseline(service, false) }
+    }
+
     /// Include or leave out a service in "what you paid before", at its
     /// current price and renewal day.
     func setInBaseline(_ service: Service, _ included: Bool) {

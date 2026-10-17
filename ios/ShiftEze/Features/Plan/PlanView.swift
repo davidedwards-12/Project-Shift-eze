@@ -93,7 +93,7 @@ private struct EmptyPlanSection: View {
                 ContentUnavailableView(
                     "Nothing to pay for",
                     systemImage: "checkmark.seal",
-                    description: Text("Everything on your watchlist is free with ads or included with a membership. To watch something ad-free, open it on the Watchlist tab.")
+                    description: Text("Everything on your watchlist is free with ads or included with something you already have. To watch something ad-free, open it on the Watchlist tab.")
                 )
             }
         }
@@ -413,8 +413,10 @@ private struct ElsewhereSection: View {
 
     var body: some View {
         if !plan.included.isEmpty {
-            Section(hasAmazonPrime ? "Included with Amazon Prime" : "Included with a membership") {
-                ForEach(plan.included, id: \.id) { TitleRow(name: $0.name, detail: $0.included.formatted()) }
+            Section("Already included") {
+                ForEach(plan.included, id: \.id) { title in
+                    TitleRow(name: title.name, detail: title.included.map(includedLabel).formatted())
+                }
             }
         }
         let placement = plan.freePlacement
@@ -444,6 +446,16 @@ private struct ElsewhereSection: View {
                 ForEach(plan.unavailable, id: \.id) { TitleRow(name: $0.name, detail: "Not streaming anywhere we track right now") }
             }
         }
+    }
+}
+
+extension ElsewhereSection {
+    /// "Hulu with Verizon", "Prime Video with Amazon Prime".
+    func includedLabel(_ name: String) -> String {
+        let service = plan.catalog[name]
+        if let via = service.includedViaLabel { return "\(name) with \(via)" }
+        if service.includedWith == "amazon_prime", hasAmazonPrime { return "\(name) with Amazon Prime" }
+        return name
     }
 }
 

@@ -147,12 +147,12 @@ private struct SubscriptionsStep: View {
                 Section {
                     ForEach(model.services.indices, id: \.self) { index in
                         ServiceSetupRow(
-                            service: $model.services[index],
+                            index: index,
                             includedWithPrime: model.hasAmazonPrime && model.services[index].includedWith == "amazon_prime"
                         )
                     }
                 } header: {
-                    Text("Which do you pay for now?")
+                    Text("Which do you have now?")
                 } footer: {
                     Text(BillingFields.hint)
                 }
@@ -164,22 +164,54 @@ private struct SubscriptionsStep: View {
 }
 
 private struct ServiceSetupRow: View {
-    @Binding var service: Service
+    @Environment(AppModel.self) private var model
+    let index: Int
     let includedWithPrime: Bool
 
     var body: some View {
+        @Bindable var model = model
+        let service = $model.services[index]
+        let included = service.wrappedValue.includedVia != nil
         if includedWithPrime {
-            LabeledContent(service.name, value: "Included with Prime")
+            LabeledContent(service.wrappedValue.name, value: "Included with Prime")
         } else {
-            Toggle(isOn: $service.current) {
+            Toggle(isOn: Binding(
+                get: { service.wrappedValue.current || included },
+                set: { has in
+                    model.setIncluded(nil, at: index)
+                    model.services[index].current = has
+                }
+            )) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(service.name)
-                    Text("\(service.price.money)/mo").font(.caption).foregroundStyle(.secondary)
+                    Text(service.wrappedValue.name)
+                    Text("\(service.wrappedValue.price.money)/mo").font(.caption).foregroundStyle(.secondary)
                 }
             }
-            if service.current {
-                PriceField(price: $service.price)
-                BillingFields(service: $service)
+            if service.wrappedValue.current || included {
+                if included {
+                    LabeledContent("Included with") {
+                        TextField("Included with", text: Binding(
+                            get: { service.wrappedValue.includedVia ?? "" },
+                            set: { model.services[index].includedVia = $0 }
+                        ), prompt: Text("Verizon"))
+                        .multilineTextAlignment(.trailing)
+                        .autocorrectionDisabled()
+                    }
+                    Button("I pay for it myself") {
+                        model.setIncluded(nil, at: index)
+                        model.services[index].current = true
+                    }
+                    .font(.subheadline)
+                } else {
+                    // Most people pay for their services, so "included" is a
+                    // quiet link rather than another switch.
+                    Button("Get it with your phone or internet plan?") {
+                        model.setIncluded("", at: index)
+                    }
+                    .font(.subheadline)
+                    PriceField(price: service.price)
+                    BillingFields(service: service)
+                }
             }
         }
     }
