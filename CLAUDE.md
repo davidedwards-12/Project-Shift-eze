@@ -97,6 +97,15 @@ titles still to watch (`AppModel.moveToWatch`). A watched movie links to
 Letterboxd by its TMDB id (`letterboxd.com/tmdb/<id>/`); TV has no link
 because Letterboxd doesn't list shows yet.
 
+Titles free with ads on a trusted service (`Planning.trustedFree`: Pluto
+TV, Tubi…) never make the plan pay for a service. The Watchlist row and
+`TitleDetailView` say so; "Not there?" works on free services too (stored in
+`notOn` by provider name; `Planning.freeAliases` merges variants like "Plex
+Channel" into "Plex"), and the entry's `adFree` flag ("I'd rather watch it
+ad-free") makes the planner ignore its free options. The Plan tab says when
+the plan starts (the 1st of next month); anything due before then is only in
+Upcoming actions.
+
 Marking an action done (swipe left → Done) changes the user's subscriptions
 via `SubscriptionChanges.apply`: a cancel makes the service not current (paid
 up until the renewal date), a start/restart makes it current, renewing on the

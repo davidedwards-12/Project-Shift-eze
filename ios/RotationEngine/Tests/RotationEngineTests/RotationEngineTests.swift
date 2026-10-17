@@ -312,6 +312,56 @@ func line(_ date: CalendarDate, _ title: String) -> String { "\(date) \(title)" 
     }
 }
 
+@Suite struct FreeWithAds {
+    // Like Star Trek: The Next Generation: on a paid service and free on Pluto TV.
+    let tng = WatchlistEntry(title: "TNG", services: ["Hulu"], free: ["Pluto TV"])
+
+    @Test func freeTitlesDontPayForAService() throws {
+        let plan = try RotationPlan.make(services: PlanningRules.services, watchlist: [tng],
+                                         budget: 4000, start: start, today: today)
+        #expect(plan.months.isEmpty)
+        #expect(plan.freePlacement.freeOnly == ["TNG"])
+    }
+
+    @Test func adFreeTitlesArePlannedOnTheirPaidService() throws {
+        var entry = tng
+        entry.adFree = true
+        let plan = try RotationPlan.make(services: PlanningRules.services, watchlist: [entry],
+                                         budget: 4000, start: start, today: today)
+        #expect(plan.cover.assignment == ["TNG": "Hulu"])
+        #expect(plan.title(id: "TNG")?.adFree == true)
+        #expect(plan.title(id: "TNG")?.freeListed == ["Pluto TV"])
+    }
+
+    @Test func freeServiceMarkedNotThereIsIgnored() throws {
+        var entry = tng
+        entry.notOn = ["Pluto TV"]
+        let plan = try RotationPlan.make(services: PlanningRules.services, watchlist: [entry],
+                                         budget: 4000, start: start, today: today)
+        #expect(plan.cover.assignment == ["TNG": "Hulu"])
+        #expect(plan.title(id: "TNG")?.free == [])
+        #expect(plan.title(id: "TNG")?.freeNotOn == ["Pluto TV"])
+    }
+
+    @Test func plexChannelIsMergedIntoPlex() {
+        let (_, titles) = Planning.prepare(services: PlanningRules.services, watchlist: [
+            WatchlistEntry(title: "X", services: ["Hulu"], free: ["Plex", "Plex Channel", "Tubi TV"]),
+            WatchlistEntry(title: "Y", services: ["Hulu"], free: ["Plex Channel"], notOn: ["Plex"]),
+        ])
+        #expect(titles[0].free == ["Plex", "Tubi TV"])
+        #expect(titles[1].free == [])
+        #expect(titles[1].freeNotOn == ["Plex"])
+    }
+
+    @Test func adFreeRoundTripsAndOldDataIsNotAdFree() throws {
+        var entry = tng
+        entry.adFree = true
+        #expect(try JSONDecoder().decode(WatchlistEntry.self, from: JSONEncoder().encode(entry)) == entry)
+        let old = try JSONDecoder().decode(WatchlistEntry.self, from: Data(#"{"title": "TNG", "services": ["Hulu"]}"#.utf8))
+        #expect(old.adFree == nil)
+    }
+}
+
 @Suite struct NotOnAService {
     @Test func markedServiceIsIgnoredForThatTitle() throws {
         // The Bear is listed on Hulu and Disney+; Andor needs Disney+ anyway,

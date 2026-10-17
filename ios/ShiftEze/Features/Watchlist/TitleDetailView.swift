@@ -60,14 +60,28 @@ struct TitleDetailView: View {
                         Text("Tap \"Not there?\" if you checked and it isn't on that service. We'll plan around it.")
                     }
 
-                    if !title.free.isEmpty || !title.library.isEmpty {
-                        Section("Free") {
-                            if !title.free.isEmpty {
-                                LabeledContent("With ads", value: title.free.formatted())
+                    if !title.freeListed.isEmpty || !title.library.isEmpty {
+                        Section {
+                            ForEach(title.freeListed, id: \.self) { service in
+                                ServiceAvailabilityRow(
+                                    service: service,
+                                    isNotOn: title.freeNotOn.contains(service),
+                                    toggle: { model.setNotOn(service, !title.freeNotOn.contains(service), titleID: id) }
+                                )
+                            }
+                            if !title.freeListed.isEmpty {
+                                Toggle("I'd rather watch it ad-free", isOn: Binding(
+                                    get: { title.adFree },
+                                    set: { model.setAdFree($0, titleID: id) }
+                                ))
                             }
                             if !title.library.isEmpty {
                                 LabeledContent("With a library card", value: title.library.formatted())
                             }
+                        } header: {
+                            Text("Free")
+                        } footer: {
+                            if let note = freeNote(title) { Text(note) }
                         }
                     }
 
@@ -108,6 +122,22 @@ struct TitleDetailView: View {
         } else {
             ContentUnavailableView("Not on your watchlist", systemImage: "questionmark.circle")
         }
+    }
+}
+
+extension TitleDetailView {
+    /// What the free options mean for the plan, in plain words.
+    func freeNote(_ title: Title) -> String? {
+        guard !title.freeListed.isEmpty else { return nil }
+        if title.adFree {
+            return title.services.isEmpty
+                ? "It's not on a paid service we track, so there's nothing to plan."
+                : "Your plan pays for \(title.services.formatted(.list(type: .or))) for it, ad-free."
+        }
+        if title.free.isEmpty {
+            return "You said it isn't free on these, so your plan pays for a service for it."
+        }
+        return "It's free with ads, so we won't add a paid service for it. Tap \"Not there?\" if it isn't free there, or switch on ad-free."
     }
 }
 

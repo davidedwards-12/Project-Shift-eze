@@ -86,6 +86,9 @@ public struct WatchlistEntry: Hashable, Sendable {
     /// When the user marked it watched. Watched titles stay on the list but
     /// drop out of the plan; nil means still to watch.
     public var watchedOn: CalendarDate?
+    /// The user would rather pay for a service than watch it free with ads.
+    /// Nil (older data) means no.
+    public var adFree: Bool?
 
     public init(
         id: String? = nil,
@@ -95,7 +98,8 @@ public struct WatchlistEntry: Hashable, Sendable {
         months: Int? = nil,
         checkedOn: CalendarDate? = nil,
         notOn: [String]? = nil,
-        watchedOn: CalendarDate? = nil
+        watchedOn: CalendarDate? = nil,
+        adFree: Bool? = nil
     ) {
         self.id = id ?? title
         self.title = title
@@ -105,11 +109,12 @@ public struct WatchlistEntry: Hashable, Sendable {
         self.checkedOn = checkedOn
         self.notOn = notOn
         self.watchedOn = watchedOn
+        self.adFree = adFree
     }
 }
 
 extension WatchlistEntry: Codable {
-    enum CodingKeys: String, CodingKey { case id, title, services, free, months, checkedOn, notOn, watchedOn }
+    enum CodingKeys: String, CodingKey { case id, title, services, free, months, checkedOn, notOn, watchedOn, adFree }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -121,6 +126,7 @@ extension WatchlistEntry: Codable {
         checkedOn = try c.decodeIfPresent(CalendarDate.self, forKey: .checkedOn)
         notOn = try c.decodeIfPresent([String].self, forKey: .notOn)
         watchedOn = try c.decodeIfPresent(CalendarDate.self, forKey: .watchedOn)
+        adFree = try c.decodeIfPresent(Bool.self, forKey: .adFree)
     }
 }
 
@@ -131,7 +137,8 @@ public struct Title: Hashable, Sendable {
     public var name: String
     /// Tracked paid services that carry it, sorted by name.
     public var services: [String]
-    /// Trusted free, ad-supported providers (Tubi, The Roku Channel…).
+    /// Trusted free, ad-supported providers (Tubi, The Roku Channel…) the plan
+    /// may use instead of paying. Empty when the user wants it ad-free.
     public var free: [String]
     /// Free with a library card (Kanopy, Hoopla): an option, never relied on.
     public var library: [String]
@@ -144,6 +151,13 @@ public struct Title: Hashable, Sendable {
     /// Services TMDB lists but the user says it isn't on; excluded from
     /// `services`.
     public var notOn: [String] = []
+    /// Every trusted free provider TMDB lists, including ones the user says
+    /// it isn't on, for display.
+    public var freeListed: [String] = []
+    /// Free providers the user says it isn't on; excluded from `free`.
+    public var freeNotOn: [String] = []
+    /// The user would rather pay than watch it free with ads.
+    public var adFree = false
 }
 
 /// The services a plan can use, by name, in their original order.
