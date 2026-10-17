@@ -172,10 +172,14 @@ must not become the display name.
 Builds go to testers through TestFlight under Dave's Apple Developer account
 (Individual); Daniel is in App Store Connect with his own Apple ID.
 `ITSAppUsesNonExemptEncryption = NO` is set because the app only uses
-standard HTTPS. Bump `CURRENT_PROJECT_VERSION` for every upload (App Store
-Connect rejects a repeated build number) and `MARKETING_VERSION` for a new
-version. A local archive includes the TMDB key from `Secrets.xcconfig`, so
-builds are for the team only until #14 moves TMDB calls to a server.
+standard HTTPS. Xcode Cloud builds and uploads to TestFlight on merges to `master` that
+change `ios/` (workflow set up in Xcode by Dave). `ios/ci_scripts/` holds its
+hooks: `ci_post_clone.sh` writes `Secrets.xcconfig` from the workflow's secret
+`TMDB_API_KEY` environment variable (never committed), and
+`ci_pre_xcodebuild.sh` sets the build number to Xcode Cloud's
+`CI_BUILD_NUMBER` + 100 (builds 1 and 2 were uploaded by hand). Bump
+`MARKETING_VERSION` by hand for a new version. Every build includes the TMDB
+key, so builds are for the team only until #14 moves TMDB calls to a server.
 
 ```bash
 xcodebuild build -project ios/ShiftEze.xcodeproj -scheme ShiftEze \
